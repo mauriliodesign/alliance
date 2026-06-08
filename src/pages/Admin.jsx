@@ -10,10 +10,12 @@ import {
   HiBadgeCheck,
   HiTrendingUp,
   HiMenu,
+  HiOutlineChat,
 } from "react-icons/hi";
 import { useLang } from "../i18n/LanguageContext";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import Sidebar from "../components/admin/Sidebar";
+import LeadDrawer from "../components/admin/LeadDrawer";
 import { useLeads } from "../hooks/useLeads";
 import { STAGES, addLead, moveLead, deleteLead } from "../lib/leadsStore";
 
@@ -33,6 +35,12 @@ export default function Admin() {
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+
+  const selectedLead = useMemo(
+    () => leads.find((l) => l.id === selectedId) || null,
+    [leads, selectedId]
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -67,7 +75,7 @@ export default function Admin() {
               </button>
               <div>
                 <h1 className="font-display text-2xl leading-none tracking-wide text-alliance-light">
-                  {view === "pipeline" ? t("admin.title") : t("admin.navContacts")}
+                  {view === "pipeline" ? t("admin.navPipeline") : t("admin.navContacts")}
                 </h1>
                 <p className="text-xs text-alliance-light/50">{t("admin.subtitle")}</p>
               </div>
@@ -87,38 +95,47 @@ export default function Admin() {
         </header>
 
         <main className="px-5 py-6 sm:px-8">
-          {/* Stats + search */}
-          <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
+          {/* Stats */}
+          <div className="mb-6 grid gap-4 sm:grid-cols-3">
             <Stat icon={HiUsers} label={t("admin.total")} value={total} accent="text-alliance-yellow" />
             <Stat icon={HiBadgeCheck} label={t("admin.enrolled")} value={won} accent="text-emerald-300" />
             <Stat icon={HiTrendingUp} label={t("admin.conversion")} value={`${conversion}%`} accent="text-sky-300" />
-            <div className="relative flex items-center lg:w-72">
+          </div>
+
+          {/* Toolbar: section title + search */}
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="font-display text-xl tracking-wide text-alliance-light/80">
+              {view === "pipeline" ? t("admin.navPipeline") : t("admin.navContacts")}
+            </h2>
+            <div className="relative flex items-center sm:w-72">
               <HiSearch className="pointer-events-none absolute left-4 text-lg text-alliance-light/40" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("admin.search")}
-                className="w-full rounded-xl border border-white/10 bg-alliance-gray px-4 py-3 pl-11 text-sm text-alliance-light outline-none transition-colors placeholder:text-alliance-light/30 focus:border-alliance-yellow"
+                className="w-full rounded-xl border border-white/10 bg-alliance-gray px-4 py-2.5 pl-11 text-sm text-alliance-light outline-none transition-colors placeholder:text-alliance-light/30 focus:border-alliance-yellow"
               />
             </div>
           </div>
 
           {view === "pipeline" ? (
-            <KanbanBoard leads={filtered} t={t} lang={lang} />
+            <KanbanBoard leads={filtered} t={t} lang={lang} onSelect={setSelectedId} />
           ) : (
-            <ContactsTable leads={filtered} t={t} lang={lang} />
+            <ContactsTable leads={filtered} t={t} lang={lang} onSelect={setSelectedId} />
           )}
         </main>
       </div>
 
       {adding && <AddLeadModal t={t} onClose={() => setAdding(false)} />}
+
+      <LeadDrawer lead={selectedLead} onClose={() => setSelectedId(null)} />
     </div>
   );
 }
 
 /* ---------------- Kanban ---------------- */
 
-function KanbanBoard({ leads, t, lang }) {
+function KanbanBoard({ leads, t, lang, onSelect }) {
   const [dragId, setDragId] = useState(null);
   const [overStage, setOverStage] = useState(null);
 
@@ -174,6 +191,7 @@ function KanbanBoard({ leads, t, lang }) {
                     lang={lang}
                     t={t}
                     dragging={dragId === lead.id}
+                    onOpen={() => onSelect(lead.id)}
                     onDragStart={() => setDragId(lead.id)}
                     onDragEnd={() => {
                       setDragId(null);
@@ -193,21 +211,27 @@ function KanbanBoard({ leads, t, lang }) {
   );
 }
 
-function LeadCard({ lead, accent, lang, t, dragging, onDragStart, onDragEnd, onDelete }) {
+function LeadCard({ lead, accent, lang, t, dragging, onOpen, onDragStart, onDragEnd, onDelete }) {
   const date = new Date(lead.createdAt).toLocaleDateString(lang, { day: "2-digit", month: "short" });
+  const stop = (e) => e.stopPropagation();
+  const followups = lead.followups?.length || 0;
   return (
     <article
       draggable
+      onClick={onOpen}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`group cursor-grab rounded-xl border border-white/8 bg-alliance-black p-3.5 transition-all hover:border-white/20 active:cursor-grabbing ${
+      className={`group cursor-pointer rounded-xl border border-white/8 bg-alliance-black p-3.5 transition-all hover:border-alliance-yellow/40 active:cursor-grabbing ${
         dragging ? "opacity-40" : ""
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-semibold text-alliance-light">{lead.name}</h3>
         <button
-          onClick={onDelete}
+          onClick={(e) => {
+            stop(e);
+            onDelete();
+          }}
           aria-label="Delete"
           className="shrink-0 text-alliance-light/30 opacity-0 transition-all hover:text-rose-400 group-hover:opacity-100"
         >
@@ -217,6 +241,7 @@ function LeadCard({ lead, accent, lang, t, dragging, onDragStart, onDragEnd, onD
 
       <a
         href={`mailto:${lead.email}`}
+        onClick={stop}
         className="mt-2 flex items-center gap-2 truncate text-xs text-alliance-light/55 transition-colors hover:text-alliance-yellow"
       >
         <HiOutlineMail className="shrink-0 text-sm" />
@@ -225,6 +250,7 @@ function LeadCard({ lead, accent, lang, t, dragging, onDragStart, onDragEnd, onD
       {lead.phone && (
         <a
           href={`tel:${lead.phone.replace(/\s/g, "")}`}
+          onClick={stop}
           className="mt-1 flex items-center gap-2 text-xs text-alliance-light/55 transition-colors hover:text-alliance-yellow"
         >
           <HiOutlinePhone className="shrink-0 text-sm" />
@@ -236,7 +262,15 @@ function LeadCard({ lead, accent, lang, t, dragging, onDragStart, onDragEnd, onD
         <span className={`rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${accent.text}`}>
           {lead.source === "manual" ? t("admin.sourceManual") : t("admin.sourceForm")}
         </span>
-        <span className="text-[10px] text-alliance-light/35">{date}</span>
+        <div className="flex items-center gap-2 text-[10px] text-alliance-light/35">
+          {followups > 0 && (
+            <span className="inline-flex items-center gap-1">
+              <HiOutlineChat className="text-xs" />
+              {followups}
+            </span>
+          )}
+          <span>{date}</span>
+        </div>
       </div>
     </article>
   );
@@ -244,7 +278,7 @@ function LeadCard({ lead, accent, lang, t, dragging, onDragStart, onDragEnd, onD
 
 /* ---------------- Contacts table ---------------- */
 
-function ContactsTable({ leads, t, lang }) {
+function ContactsTable({ leads, t, lang, onSelect }) {
   if (leads.length === 0) {
     return (
       <div className="rounded-2xl border border-white/8 bg-alliance-gray/40 py-20 text-center text-sm text-alliance-light/40">
@@ -275,10 +309,18 @@ function ContactsTable({ leads, t, lang }) {
               year: "numeric",
             });
             return (
-              <tr key={lead.id} className="border-b border-white/5 transition-colors hover:bg-white/[0.03]">
+              <tr
+                key={lead.id}
+                onClick={() => onSelect(lead.id)}
+                className="cursor-pointer border-b border-white/5 transition-colors hover:bg-white/[0.03]"
+              >
                 <td className="px-5 py-3.5 font-semibold text-alliance-light">{lead.name}</td>
                 <td className="px-5 py-3.5">
-                  <a href={`mailto:${lead.email}`} className="text-alliance-light/65 hover:text-alliance-yellow">
+                  <a
+                    href={`mailto:${lead.email}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-alliance-light/65 hover:text-alliance-yellow"
+                  >
                     {lead.email}
                   </a>
                 </td>
@@ -297,7 +339,8 @@ function ContactsTable({ leads, t, lang }) {
                 <td className="px-5 py-3.5 text-alliance-light/55">{date}</td>
                 <td className="px-5 py-3.5 text-right">
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (window.confirm(t("admin.deleteConfirm"))) deleteLead(lead.id);
                     }}
                     aria-label="Delete"

@@ -79,6 +79,26 @@ export function deleteLead(id) {
   write(read().filter((l) => l.id !== id));
 }
 
+export function addFollowup(leadId, text) {
+  const note = { id: uid(), text: text.trim(), createdAt: Date.now() };
+  write(
+    read().map((l) =>
+      l.id === leadId ? { ...l, followups: [note, ...(l.followups || [])] } : l
+    )
+  );
+  return note;
+}
+
+export function deleteFollowup(leadId, noteId) {
+  write(
+    read().map((l) =>
+      l.id === leadId
+        ? { ...l, followups: (l.followups || []).filter((n) => n.id !== noteId) }
+        : l
+    )
+  );
+}
+
 export function subscribe(fn) {
   listeners.add(fn);
   const onStorage = (e) => {
