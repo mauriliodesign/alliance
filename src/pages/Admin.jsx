@@ -24,7 +24,7 @@ import Calendar from "../components/admin/Calendar";
 import Avatar from "../components/admin/Avatar";
 import { useLeads } from "../hooks/useLeads";
 import { STAGES, addLead, moveLead, deleteLead, restoreLead, isOverdue, isDueToday } from "../lib/leadsStore";
-import { timeAgo, exportLeadsCsv, STAGE_DOT, INTEREST_OPTS, TAG_SUGGESTIONS } from "../lib/format";
+import { timeAgo, exportLeadsCsv, STAGE_DOT, TAG_SUGGESTIONS } from "../lib/format";
 
 const DAY = 86400000;
 
@@ -389,7 +389,7 @@ function Stat({ icon: Icon, label, value }) {
 }
 
 function AddLeadModal({ t, onClose }) {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", interest: "", instagram: "", tags: [] });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", instagram: "", tags: [] });
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const toggleTag = (tag) =>
     setForm((f) => ({ ...f, tags: f.tags.includes(tag) ? f.tags.filter((x) => x !== tag) : [...f.tags, tag] }));
@@ -430,19 +430,6 @@ function AddLeadModal({ t, onClose }) {
             <Field label={t("modal.emailLabel")} type="email" value={form.email} onChange={change("email")} placeholder={t("modal.emailPlaceholder")} />
             <Field label={t("modal.phoneLabel")} type="tel" value={form.phone} onChange={change("phone")} placeholder={t("modal.phonePlaceholder")} />
             <Field label={t("admin.instagram")} value={form.instagram} onChange={change("instagram")} placeholder="@instagram" />
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wide text-alliance-light/60">{t("admin.interest")}</span>
-              <select
-                value={form.interest}
-                onChange={change("interest")}
-                className="rounded-xl border border-white/10 bg-alliance-black px-4 py-3 text-sm text-alliance-light outline-none transition-colors focus:border-alliance-yellow"
-              >
-                <option value="">{t("admin.interestSelect")}</option>
-                {INTEREST_OPTS.map((o) => (
-                  <option key={o.value} value={o.value}>{t(o.label)}</option>
-                ))}
-              </select>
-            </label>
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-alliance-light/60">{t("admin.tags")}</span>
               <div className="flex flex-wrap gap-2">

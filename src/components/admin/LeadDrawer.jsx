@@ -12,14 +12,13 @@ import {
   HiArrowRight,
   HiSparkles,
   HiOutlineCalendar,
-  HiOutlineStar,
   HiChevronDown,
 } from "react-icons/hi";
 import { FaWhatsapp, FaInstagram } from "react-icons/fa";
 import { useLang } from "../../i18n/LanguageContext";
 import { useToast } from "../ToastContext";
 import Avatar from "./Avatar";
-import { timeAgo, STAGE_DOT, INTEREST_OPTS, interestKey, TAG_SUGGESTIONS } from "../../lib/format";
+import { timeAgo, STAGE_DOT, TAG_SUGGESTIONS } from "../../lib/format";
 import {
   STAGES,
   moveLead,
@@ -41,7 +40,7 @@ export default function LeadDrawer({ lead, onClose }) {
   const { showToast } = useToast();
   const [note, setNote] = useState("");
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", interest: "", instagram: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", instagram: "" });
   const [tag, setTag] = useState("");
   const [taskForm, setTaskForm] = useState({ text: "", due: "" });
 
@@ -58,7 +57,7 @@ export default function LeadDrawer({ lead, onClose }) {
     setNote("");
     setTag("");
     setTaskForm({ text: "", due: "" });
-    if (lead) setForm({ name: lead.name, email: lead.email || "", phone: lead.phone || "", interest: lead.interest || "", instagram: lead.instagram || "" });
+    if (lead) setForm({ name: lead.name, email: lead.email || "", phone: lead.phone || "", instagram: lead.instagram || "" });
   }, [lead?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const timeline = useMemo(() => {
@@ -90,7 +89,6 @@ export default function LeadDrawer({ lead, onClose }) {
       name: form.name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
-      interest: form.interest,
       instagram: form.instagram.trim().replace(/^@/, ""),
     });
     setEditing(false);
@@ -212,19 +210,6 @@ export default function LeadDrawer({ lead, onClose }) {
                   <EditField icon={HiOutlineMail} type="email" value={form.email} onChange={(v) => setForm((f) => ({ ...f, email: v }))} placeholder={t("modal.emailPlaceholder")} />
                   <EditField icon={HiOutlinePhone} type="tel" value={form.phone} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} placeholder={t("modal.phonePlaceholder")} />
                   <EditField icon={FaInstagram} value={form.instagram} onChange={(v) => setForm((f) => ({ ...f, instagram: v }))} placeholder="@instagram" />
-                  <div className="flex items-center gap-3">
-                    <HiOutlineStar className="shrink-0 text-lg text-alliance-light/40" />
-                    <select
-                      value={form.interest}
-                      onChange={(e) => setForm((f) => ({ ...f, interest: e.target.value }))}
-                      className="w-full rounded-lg border border-white/10 bg-alliance-black px-3 py-2 text-sm text-alliance-light outline-none focus:border-alliance-yellow"
-                    >
-                      <option value="">{t("admin.interestSelect")}</option>
-                      {INTEREST_OPTS.map((o) => (
-                        <option key={o.value} value={o.value}>{t(o.label)}</option>
-                      ))}
-                    </select>
-                  </div>
                 </>
               ) : (
                 <>
@@ -241,12 +226,6 @@ export default function LeadDrawer({ lead, onClose }) {
                       <FaInstagram className="shrink-0 text-lg text-alliance-light/40" />
                       @{lead.instagram.replace(/^@/, "")}
                     </a>
-                  )}
-                  {lead.interest && (
-                    <div className="flex items-center gap-3 text-sm text-alliance-light/75">
-                      <HiOutlineStar className="shrink-0 text-lg text-alliance-light/40" />
-                      {t("admin.interest")}: {t(interestKey(lead.interest))}
-                    </div>
                   )}
                   <div className="flex items-center gap-3 text-sm text-alliance-light/55">
                     <HiOutlineClock className="shrink-0 text-lg text-alliance-light/40" />
