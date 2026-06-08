@@ -29,6 +29,11 @@ export const interestKey = (value) => INTEREST_OPTS.find((o) => o.value === valu
 
 export const TAG_SUGGESTIONS = ["adultos", "kids", "no-gi", "competidor", "reabertura"];
 
+// Stage label with optional per-stage override from settings.
+export function stageLabel(stage, t, settings) {
+  return settings?.pipeline?.stageLabels?.[stage]?.trim() || t(`admin.stage.${stage}`);
+}
+
 // One small colour cue per stage (used only as a dot, like the selected menu item).
 export const STAGE_DOT = {
   new: "bg-alliance-yellow",

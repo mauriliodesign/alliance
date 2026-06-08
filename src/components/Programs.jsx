@@ -1,13 +1,12 @@
-import { GiBlackBelt, GiPunchBlast, GiTeacher, GiBoxingGlove } from "react-icons/gi";
 import { useLang } from "../i18n/LanguageContext";
 import { useReveal } from "../hooks/useReveal";
 import SectionLabel from "./SectionLabel";
 
 const PROGRAMS = [
-  { icon: GiBlackBelt, title: "programs.adultsTitle", desc: "programs.adultsDesc", tag: "programs.adultsTag" },
-  { icon: GiPunchBlast, title: "programs.nogiTitle", desc: "programs.nogiDesc", tag: "programs.nogiTag" },
-  { icon: GiTeacher, title: "programs.privateTitle", desc: "programs.privateDesc", tag: "programs.privateTag" },
-  { icon: GiBoxingGlove, title: "programs.kidsTitle", desc: "programs.kidsDesc", tag: "programs.kidsTag" },
+  { img: "/images/prog-adults.webp", title: "programs.adultsTitle", desc: "programs.adultsDesc", tag: "programs.adultsTag" },
+  { img: "/images/prog-nogi.webp", title: "programs.nogiTitle", desc: "programs.nogiDesc", tag: "programs.nogiTag" },
+  { img: "/images/prog-private.webp", title: "programs.privateTitle", desc: "programs.privateDesc", tag: "programs.privateTag" },
+  { img: "/images/prog-kids.webp", title: "programs.kidsTitle", desc: "programs.kidsDesc", tag: "programs.kidsTag" },
 ];
 
 export default function Programs() {
@@ -26,32 +25,34 @@ export default function Programs() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          {PROGRAMS.map((p, i) => {
-            const Icon = p.icon;
-            return (
-              <article
-                key={p.title}
-                className="reveal group relative overflow-hidden rounded-2xl border border-white/8 bg-alliance-gray/60 p-8 transition-all duration-300 hover:border-alliance-yellow/40 hover:bg-alliance-gray"
-                style={{ transitionDelay: `${i * 60}ms` }}
-              >
-                <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-alliance-yellow/5 blur-2xl transition-opacity group-hover:opacity-100 opacity-0" />
-                <div className="relative flex items-start justify-between">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-alliance-yellow/10 text-3xl text-alliance-yellow transition-transform group-hover:scale-110">
-                    <Icon />
-                  </span>
-                  <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-alliance-light/60">
-                    {t(p.tag)}
-                  </span>
-                </div>
-                <h3 className="relative mt-6 font-display text-2xl tracking-wide text-alliance-light sm:text-3xl">
+          {PROGRAMS.map((p, i) => (
+            <article
+              key={p.title}
+              className="reveal group overflow-hidden rounded-2xl border border-white/8 bg-alliance-gray/60 transition-all duration-300 hover:border-alliance-yellow/40 hover:bg-alliance-gray"
+              style={{ transitionDelay: `${i * 60}ms` }}
+            >
+              <div className="relative aspect-[16/10] overflow-hidden">
+                <img
+                  src={p.img}
+                  alt={t(p.title)}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-alliance-black via-alliance-black/20 to-transparent" />
+                <span className="absolute right-4 top-4 rounded-full border border-white/20 bg-alliance-black/50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-alliance-light backdrop-blur-sm">
+                  {t(p.tag)}
+                </span>
+              </div>
+              <div className="p-7">
+                <h3 className="font-display text-2xl tracking-wide text-alliance-light sm:text-3xl">
                   {t(p.title)}
                 </h3>
-                <p className="relative mt-3 text-base leading-relaxed text-alliance-light/65">
+                <p className="mt-3 text-base leading-relaxed text-alliance-light/65">
                   {t(p.desc)}
                 </p>
-              </article>
-            );
-          })}
+              </div>
+            </article>
+          ))}
         </div>
       </div>
     </section>

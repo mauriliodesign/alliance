@@ -2,6 +2,7 @@ import { HiArrowUp, HiPhone, HiLocationMarker, HiMail } from "react-icons/hi";
 import { FaWhatsapp, FaInstagram } from "react-icons/fa";
 import { useLang } from "../i18n/LanguageContext";
 import { useBooking } from "./BookingContext";
+import { useSettings } from "../hooks/useSettings";
 
 const LINKS = [
   { key: "navbar.programs", href: "#programas" },
@@ -15,6 +16,7 @@ const LINKS = [
 export default function Footer() {
   const { t } = useLang();
   const { openBooking } = useBooking();
+  const { business } = useSettings();
   const year = new Date().getFullYear();
 
   return (
@@ -33,7 +35,7 @@ export default function Footer() {
             </p>
             <div className="mt-6 flex gap-3">
               <a
-                href="https://wa.me/351924851474"
+                href={`https://wa.me/${business.whatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
@@ -42,7 +44,7 @@ export default function Footer() {
                 <FaWhatsapp />
               </a>
               <a
-                href="https://www.instagram.com/alliancejjpdn_lisboa/"
+                href={`https://www.instagram.com/${business.instagram}/`}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
@@ -80,24 +82,24 @@ export default function Footer() {
             <ul className="mt-4 flex flex-col gap-3 text-sm text-alliance-light/55">
               <li className="flex items-start gap-2.5">
                 <HiLocationMarker className="mt-0.5 shrink-0 text-base text-alliance-yellow" />
-                Rua Almirante Gago Coutinho 19B, Moscavide
+                {business.address}
               </li>
               <li>
                 <a
-                  href="tel:+351924851474"
+                  href={`tel:${business.phone.replace(/\s/g, "")}`}
                   className="flex items-center gap-2.5 transition-colors hover:text-alliance-yellow"
                 >
                   <HiPhone className="shrink-0 text-base text-alliance-yellow" />
-                  +351 924 851 474
+                  {business.phone}
                 </a>
               </li>
               <li>
                 <a
-                  href="mailto:geral@alliancejjlisboa.com"
+                  href={`mailto:${business.email}`}
                   className="flex items-center gap-2.5 transition-colors hover:text-alliance-yellow"
                 >
                   <HiMail className="shrink-0 text-base text-alliance-yellow" />
-                  geral@alliancejjlisboa.com
+                  {business.email}
                 </a>
               </li>
             </ul>

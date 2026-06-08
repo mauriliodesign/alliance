@@ -17,8 +17,9 @@ import {
 import { FaWhatsapp, FaInstagram } from "react-icons/fa";
 import { useLang } from "../../i18n/LanguageContext";
 import { useToast } from "../ToastContext";
+import { useSettings } from "../../hooks/useSettings";
 import Avatar from "./Avatar";
-import { timeAgo, STAGE_DOT, TAG_SUGGESTIONS } from "../../lib/format";
+import { timeAgo, STAGE_DOT, stageLabel } from "../../lib/format";
 import {
   STAGES,
   moveLead,
@@ -38,6 +39,9 @@ import {
 export default function LeadDrawer({ lead, onClose }) {
   const { t, lang } = useLang();
   const { showToast } = useToast();
+  const settings = useSettings();
+  const stageName = (st) => stageLabel(st, t, settings);
+  const tagSuggestions = settings.pipeline.tags;
   const [note, setNote] = useState("");
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", instagram: "" });
@@ -56,7 +60,8 @@ export default function LeadDrawer({ lead, onClose }) {
     setEditing(false);
     setNote("");
     setTag("");
-    setTaskForm({ text: "", due: "" });
+    const defaultDue = new Date(Date.now() + (settings.pipeline.followupDays || 0) * 86400000).toISOString().slice(0, 10);
+    setTaskForm({ text: "", due: defaultDue });
     if (lead) setForm({ name: lead.name, email: lead.email || "", phone: lead.phone || "", instagram: lead.instagram || "" });
   }, [lead?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -182,7 +187,7 @@ export default function LeadDrawer({ lead, onClose }) {
 
           {/* Stage selector */}
           <div className="mt-6">
-            <StageDropdown stage={lead.stage} onChange={(s) => moveLead(lead.id, s)} t={t} />
+            <StageDropdown stage={lead.stage} onChange={(s) => moveLead(lead.id, s)} stageName={stageName} />
           </div>
 
           {/* Contact info (with inline edit) */}
@@ -253,7 +258,7 @@ export default function LeadDrawer({ lead, onClose }) {
                   </button>
                 </span>
               ))}
-              {TAG_SUGGESTIONS.filter((s) => !(lead.tags || []).includes(s)).map((s) => (
+              {tagSuggestions.filter((s) => !(lead.tags || []).includes(s)).map((s) => (
                 <button
                   key={s}
                   onClick={() => addTag(lead.id, s)}
@@ -377,7 +382,7 @@ export default function LeadDrawer({ lead, onClose }) {
   );
 }
 
-function StageDropdown({ stage, onChange, t }) {
+function StageDropdown({ stage, onChange, stageName }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -396,7 +401,7 @@ function StageDropdown({ stage, onChange, t }) {
         className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-alliance-black px-4 py-3 text-sm text-alliance-light transition-colors hover:border-white/25"
       >
         <span className={`h-2 w-2 rounded-full ${STAGE_DOT[stage]}`} />
-        <span className="font-medium">{t(`admin.stage.${stage}`)}</span>
+        <span className="font-medium">{stageName(stage)}</span>
         <HiChevronDown className={`ml-auto text-base text-alliance-light/50 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
@@ -416,7 +421,7 @@ function StageDropdown({ stage, onChange, t }) {
                   }`}
                 >
                   <span className={`h-2 w-2 rounded-full ${STAGE_DOT[s]}`} />
-                  {t(`admin.stage.${s}`)}
+                  {stageName(s)}
                   {active && <HiCheck className="ml-auto text-base" />}
                 </button>
               </li>

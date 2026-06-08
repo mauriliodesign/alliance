@@ -1,9 +1,11 @@
 import { FaWhatsapp } from "react-icons/fa";
+import { useSettings } from "../hooks/useSettings";
 
 export default function WhatsAppFloat() {
+  const { business } = useSettings();
   return (
     <a
-      href="https://wa.me/351924851474"
+      href={`https://wa.me/${business.whatsapp}`}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="WhatsApp"

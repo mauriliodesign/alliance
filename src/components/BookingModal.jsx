@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { HiX, HiCheckCircle } from "react-icons/hi";
 import { useLang } from "../i18n/LanguageContext";
 import { useBooking } from "./BookingContext";
+import { useSettings } from "../hooks/useSettings";
 import { addLead } from "../lib/leadsStore";
-
-const PHONE = "351924851474";
 
 export default function BookingModal() {
   const { t } = useLang();
   const { open, closeBooking } = useBooking();
+  const { business } = useSettings();
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [status, setStatus] = useState("idle"); // idle | loading | success
 
@@ -46,7 +46,7 @@ export default function BookingModal() {
       `${t("modal.title")}\n${t("modal.nameLabel")}: ${form.name}\n${t("modal.emailLabel")}: ${form.email}\n${t("modal.phoneLabel")}: ${form.phone}`
     );
     setTimeout(() => {
-      window.open(`https://wa.me/${PHONE}?text=${msg}`, "_blank", "noopener");
+      window.open(`https://wa.me/${business.whatsapp}?text=${msg}`, "_blank", "noopener");
       setStatus("success");
     }, 700);
   };

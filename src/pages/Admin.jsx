@@ -23,9 +23,11 @@ import LeadDrawer from "../components/admin/LeadDrawer";
 import Calendar from "../components/admin/Calendar";
 import DayDrawer from "../components/admin/DayDrawer";
 import Avatar from "../components/admin/Avatar";
+import Settings from "../components/admin/Settings";
 import { useLeads } from "../hooks/useLeads";
+import { useSettings } from "../hooks/useSettings";
 import { STAGES, addLead, moveLead, deleteLead, restoreLead, isOverdue, isDueToday } from "../lib/leadsStore";
-import { timeAgo, exportLeadsCsv, STAGE_DOT, TAG_SUGGESTIONS } from "../lib/format";
+import { timeAgo, exportLeadsCsv, STAGE_DOT, stageLabel } from "../lib/format";
 
 const DAY = 86400000;
 
@@ -41,6 +43,8 @@ export default function Admin() {
   const { t, lang } = useLang();
   const { showToast } = useToast();
   const leads = useLeads();
+  const settings = useSettings();
+  const stageName = (st) => stageLabel(st, t, settings);
   const [view, setView] = useState("pipeline");
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
@@ -74,7 +78,7 @@ export default function Admin() {
     showToast({ message: t("admin.leadRemoved"), actionLabel: t("admin.undo"), onAction: () => restoreLead(lead) });
   };
 
-  const titles = { overview: t("admin.navOverview"), pipeline: t("admin.navPipeline"), contacts: t("admin.navContacts") };
+  const titles = { overview: t("admin.navOverview"), pipeline: t("admin.navPipeline"), contacts: t("admin.navContacts"), settings: t("settings.title") };
 
   return (
     <div className="min-h-screen bg-alliance-black">
@@ -96,27 +100,31 @@ export default function Admin() {
 
             <div className="flex items-center gap-3">
               <LanguageSwitcher />
-              <button
-                onClick={() => setAdding(true)}
-                className="inline-flex items-center gap-2 rounded-full bg-alliance-yellow px-4 py-2.5 text-sm font-semibold text-alliance-black transition-colors hover:bg-alliance-yellow-light"
-              >
-                <HiPlus className="text-base" />
-                <span className="hidden sm:inline">{t("admin.newLead")}</span>
-              </button>
+              {view !== "settings" && (
+                <button
+                  onClick={() => setAdding(true)}
+                  className="inline-flex items-center gap-2 rounded-full bg-alliance-yellow px-4 py-2.5 text-sm font-semibold text-alliance-black transition-colors hover:bg-alliance-yellow-light"
+                >
+                  <HiPlus className="text-base" />
+                  <span className="hidden sm:inline">{t("admin.newLead")}</span>
+                </button>
+              )}
             </div>
           </div>
         </header>
 
         <main className="px-5 py-6 sm:px-8">
-          {view === "overview" ? (
+          {view === "settings" ? (
+            <Settings />
+          ) : view === "overview" ? (
             <Overview leads={leads} t={t} stats={{ total, won, conversion, dueCount }} onOpen={setSelectedId} onDayClick={setSelectedDay} />
           ) : (
             <>
               {/* Stats */}
               <div className="mb-6 grid gap-4 sm:grid-cols-3">
-                <Stat icon={HiUsers} label={t("admin.total")} value={total} accent="text-alliance-yellow" />
-                <Stat icon={HiBadgeCheck} label={t("admin.enrolled")} value={won} accent="text-emerald-300" />
-                <Stat icon={HiTrendingUp} label={t("admin.conversion")} value={`${conversion}%`} accent="text-sky-300" />
+                <Stat icon={HiUsers} label={t("admin.total")} value={total} />
+                <Stat icon={HiBadgeCheck} label={t("admin.enrolled")} value={won} />
+                <Stat icon={HiTrendingUp} label={t("admin.conversion")} value={`${conversion}%`} />
               </div>
 
               {/* Toolbar */}
@@ -144,9 +152,9 @@ export default function Admin() {
               </div>
 
               {view === "pipeline" ? (
-                <KanbanBoard leads={filtered} t={t} lang={lang} onSelect={setSelectedId} onDelete={removeWithUndo} />
+                <KanbanBoard leads={filtered} t={t} lang={lang} stageName={stageName} onSelect={setSelectedId} onDelete={removeWithUndo} />
               ) : (
-                <ContactsTable leads={filtered} t={t} lang={lang} onSelect={setSelectedId} onDelete={removeWithUndo} />
+                <ContactsTable leads={filtered} t={t} lang={lang} stageName={stageName} onSelect={setSelectedId} onDelete={removeWithUndo} />
               )}
             </>
           )}
@@ -191,7 +199,7 @@ function Overview({ leads, t, stats, onOpen, onDayClick }) {
 
 /* ---------------- Kanban ---------------- */
 
-function KanbanBoard({ leads, t, lang, onSelect, onDelete }) {
+function KanbanBoard({ leads, t, lang, stageName, onSelect, onDelete }) {
   const [dragId, setDragId] = useState(null);
   const [overStage, setOverStage] = useState(null);
 
@@ -222,7 +230,7 @@ function KanbanBoard({ leads, t, lang, onSelect, onDelete }) {
             <div className="flex items-center justify-between px-4 py-3.5">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${STAGE_DOT[stage]}`} />
-                <span className="text-sm font-semibold text-alliance-light/90">{t(`admin.stage.${stage}`)}</span>
+                <span className="text-sm font-semibold text-alliance-light/90">{stageName(stage)}</span>
               </div>
               <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs font-bold text-alliance-light/50">{items.length}</span>
             </div>
@@ -325,7 +333,7 @@ function LeadCard({ lead, lang, t, dragging, onOpen, onDragStart, onDragEnd, onD
 
 /* ---------------- Contacts table ---------------- */
 
-function ContactsTable({ leads, t, lang, onSelect, onDelete }) {
+function ContactsTable({ leads, t, lang, stageName, onSelect, onDelete }) {
   if (leads.length === 0) {
     return (
       <div className="rounded-2xl border border-white/8 bg-alliance-gray/40 py-20 text-center text-sm text-alliance-light/40">
@@ -364,7 +372,7 @@ function ContactsTable({ leads, t, lang, onSelect, onDelete }) {
                 <td className="px-5 py-3.5">
                   <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-alliance-light/80">
                     <span className={`h-1.5 w-1.5 rounded-full ${STAGE_DOT[lead.stage]}`} />
-                    {t(`admin.stage.${lead.stage}`)}
+                    {stageName(lead.stage)}
                   </span>
                 </td>
                 <td className="px-5 py-3.5">
@@ -402,6 +410,7 @@ function Stat({ icon: Icon, label, value }) {
 }
 
 function AddLeadModal({ t, onClose }) {
+  const settings = useSettings();
   const [form, setForm] = useState({ name: "", email: "", phone: "", instagram: "", tags: [] });
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const toggleTag = (tag) =>
@@ -446,7 +455,7 @@ function AddLeadModal({ t, onClose }) {
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold uppercase tracking-wide text-alliance-light/60">{t("admin.tags")}</span>
               <div className="flex flex-wrap gap-2">
-                {TAG_SUGGESTIONS.map((tg) => {
+                {settings.pipeline.tags.map((tg) => {
                   const on = form.tags.includes(tg);
                   return (
                     <button

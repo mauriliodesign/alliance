@@ -136,6 +136,21 @@ export function restoreLead(lead) {
   write([lead, ...read()]);
 }
 
+export function importLeads(list) {
+  if (!Array.isArray(list)) throw new Error("invalid");
+  write(list.map(normalize));
+}
+
+export function resetLeads() {
+  cache = null;
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* ignore */
+  }
+  write(SEED.map(normalize));
+}
+
 export function subscribe(fn) {
   listeners.add(fn);
   const onStorage = (e) => {
