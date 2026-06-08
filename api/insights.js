@@ -95,23 +95,32 @@ export default async function handler(req, res) {
     const { system, user } = buildPrompts(kind, data, langName);
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts: [{ text: user }] }],
-        generationConfig: {
-          temperature: 0.4,
-          responseMimeType: "application/json",
-          responseSchema: schema,
-        },
-      }),
+    const reqBody = JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig: {
+        temperature: 0.4,
+        responseMimeType: "application/json",
+        responseSchema: schema,
+      },
     });
+
+    // Retry transient 503 (model overloaded) a few times with backoff.
+    let resp;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: reqBody,
+      });
+      if (resp.status !== 503) break;
+      await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
+    }
 
     if (!resp.ok) {
       const detail = await resp.text();
-      res.status(resp.status === 429 ? 429 : 502).json({
+      const status = resp.status === 429 ? 429 : 502;
+      res.status(status).json({
         error: resp.status === 429 ? "rate_limited" : "upstream_error",
         detail: detail.slice(0, 500),
       });
