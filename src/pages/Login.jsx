@@ -1,24 +1,37 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { HiArrowLeft, HiOutlineMail, HiOutlineLockClosed, HiEye, HiEyeOff } from "react-icons/hi";
 import { useLang } from "../i18n/LanguageContext";
+import { useAuth } from "../auth/AuthProvider";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 
 export default function Login() {
   const { t } = useLang();
+  const { session, loading, signIn } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "", remember: false });
   const [showPw, setShowPw] = useState(false);
   const [status, setStatus] = useState("idle"); // idle | loading
+  const [error, setError] = useState("");
 
   const change = (key) => (e) =>
     setForm((f) => ({ ...f, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("loading");
-    // No backend in this clone — simulate auth then reset.
-    setTimeout(() => setStatus("idle"), 1200);
+    setError("");
+    const { error: err } = await signIn(form.email.trim(), form.password);
+    if (err) {
+      setError(t("login.error"));
+      setStatus("idle");
+      return;
+    }
+    navigate("/admin", { replace: true });
   };
+
+  // Already authenticated → straight to the dashboard.
+  if (!loading && session) return <Navigate to="/admin" replace />;
 
   return (
     <div className="flex min-h-screen bg-alliance-black">
@@ -135,6 +148,12 @@ export default function Login() {
                   {t("login.forgot")}
                 </a>
               </div>
+
+              {error && (
+                <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-400">
+                  {error}
+                </p>
+              )}
 
               {/* Submit */}
               <button
