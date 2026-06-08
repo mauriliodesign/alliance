@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   HiPlus,
   HiSearch,
@@ -175,19 +175,27 @@ function Overview({ leads, t, lang, stats, onOpen }) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Funnel */}
+        {/* Leads by stage */}
         <section className="rounded-2xl border border-white/8 bg-alliance-gray/40 p-6">
           <h3 className="font-display text-xl tracking-wide text-alliance-light">{t("admin.funnel")}</h3>
+          <p className="mt-1 text-xs text-alliance-light/45">{t("admin.funnelSub")}</p>
           <div className="mt-5 flex flex-col gap-3">
             {STAGES.map((s) => {
               const count = leads.filter((l) => l.stage === s).length;
+              const pct = leads.length ? Math.round((count / leads.length) * 100) : 0;
               return (
                 <div key={s} className="flex items-center gap-3">
-                  <span className="w-28 shrink-0 text-xs text-alliance-light/60">{t(`admin.stage.${s}`)}</span>
+                  <span className="flex w-32 shrink-0 items-center gap-2 text-xs text-alliance-light/60">
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${STAGE_DOT[s]}`} />
+                    {t(`admin.stage.${s}`)}
+                  </span>
                   <div className="h-6 flex-1 overflow-hidden rounded-md bg-white/5">
-                    <div className="h-full rounded-md bg-alliance-light/20 transition-all" style={{ width: `${(count / maxStage) * 100}%`, minWidth: count ? "1.5rem" : 0 }} />
+                    <div className="h-full rounded-md bg-alliance-light/20 transition-all" style={{ width: `${(count / maxStage) * 100}%`, minWidth: count ? "0.5rem" : 0 }} />
                   </div>
-                  <span className="w-6 shrink-0 text-right text-sm font-semibold text-alliance-light">{count}</span>
+                  <span className="w-16 shrink-0 text-right">
+                    <span className="text-sm font-semibold text-alliance-light">{count}</span>
+                    <span className="ml-1 text-xs text-alliance-light/45">{pct}%</span>
+                  </span>
                 </div>
               );
             })}
@@ -198,9 +206,10 @@ function Overview({ leads, t, lang, stats, onOpen }) {
         <div className="flex flex-col gap-6">
           <section className="rounded-2xl border border-white/8 bg-alliance-gray/40 p-6">
             <h3 className="font-display text-xl tracking-wide text-alliance-light">{t("admin.sourcesTitle")}</h3>
+            <p className="mt-1 text-xs text-alliance-light/45">{t("admin.sourcesSub")}</p>
             <div className="mt-5 flex flex-col gap-3">
-              <SourceBar label={t("admin.sourceForm")} count={formCount} total={leads.length} className="bg-alliance-light/30" />
-              <SourceBar label={t("admin.sourceManual")} count={manualCount} total={leads.length} className="bg-alliance-light/15" />
+              <SourceBar label={t("admin.sourceFormLong")} count={formCount} total={leads.length} />
+              <SourceBar label={t("admin.sourceManualLong")} count={manualCount} total={leads.length} />
             </div>
           </section>
 
@@ -235,15 +244,18 @@ function Overview({ leads, t, lang, stats, onOpen }) {
   );
 }
 
-function SourceBar({ label, count, total, className }) {
+function SourceBar({ label, count, total }) {
   const pct = total ? Math.round((count / total) * 100) : 0;
   return (
     <div className="flex items-center gap-3">
-      <span className="w-24 shrink-0 text-xs uppercase tracking-wide text-alliance-light/60">{label}</span>
+      <span className="w-36 shrink-0 text-xs text-alliance-light/60">{label}</span>
       <div className="h-6 flex-1 overflow-hidden rounded-md bg-white/5">
-        <div className={`h-full rounded-md ${className}`} style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-md bg-alliance-light/25" style={{ width: `${pct}%` }} />
       </div>
-      <span className="w-10 shrink-0 text-right text-sm font-semibold text-alliance-light">{count}</span>
+      <span className="w-16 shrink-0 text-right">
+        <span className="text-sm font-semibold text-alliance-light">{count}</span>
+        <span className="ml-1 text-xs text-alliance-light/45">{pct}%</span>
+      </span>
     </div>
   );
 }
@@ -464,6 +476,12 @@ function AddLeadModal({ t, onClose }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const submit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
@@ -472,19 +490,29 @@ function AddLeadModal({ t, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-alliance-gray p-8 shadow-2xl">
-        <button onClick={onClose} aria-label={t("admin.cancel")} className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-lg text-alliance-light/70 transition-colors hover:bg-white/10 hover:text-alliance-light">
-          <HiX />
-        </button>
-        <h3 className="font-display text-3xl tracking-wide text-alliance-light">{t("admin.addTitle")}</h3>
+    <>
+      <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm" style={{ animation: "fadeInUp 0.2s ease both" }} onClick={onClose} />
+      <aside
+        className="fixed inset-y-0 right-0 z-[70] flex w-full max-w-md flex-col border-l border-white/10 bg-alliance-gray shadow-2xl"
+        style={{ animation: "fadeInUp 0.3s ease both" }}
+      >
+        <div className="flex items-start justify-between border-b border-white/8 px-6 py-5">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-alliance-yellow">{t("admin.sourceManual")}</p>
+            <h2 className="mt-1 font-display text-3xl leading-none tracking-wide text-alliance-light">{t("admin.addTitle")}</h2>
+          </div>
+          <button onClick={onClose} aria-label={t("admin.cancel")} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-lg text-alliance-light/70 transition-colors hover:bg-white/10 hover:text-alliance-light">
+            <HiX />
+          </button>
+        </div>
 
-        <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
-          <Field label={t("modal.nameLabel")} value={form.name} onChange={change("name")} required autoFocus />
-          <Field label={t("modal.emailLabel")} type="email" value={form.email} onChange={change("email")} />
-          <Field label={t("modal.phoneLabel")} type="tel" value={form.phone} onChange={change("phone")} />
-          <div className="mt-2 flex gap-3">
+        <form onSubmit={submit} className="flex flex-1 flex-col overflow-y-auto px-6 py-6">
+          <div className="flex flex-col gap-4">
+            <Field label={t("modal.nameLabel")} value={form.name} onChange={change("name")} placeholder={t("modal.namePlaceholder")} required autoFocus />
+            <Field label={t("modal.emailLabel")} type="email" value={form.email} onChange={change("email")} placeholder={t("modal.emailPlaceholder")} />
+            <Field label={t("modal.phoneLabel")} type="tel" value={form.phone} onChange={change("phone")} placeholder={t("modal.phonePlaceholder")} />
+          </div>
+          <div className="mt-auto flex gap-3 pt-8">
             <button type="button" onClick={onClose} className="flex-1 rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-alliance-light transition-colors hover:border-white/40">
               {t("admin.cancel")}
             </button>
@@ -493,8 +521,8 @@ function AddLeadModal({ t, onClose }) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 }
 
