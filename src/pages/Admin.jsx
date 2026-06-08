@@ -13,7 +13,6 @@ import {
   HiOutlineChat,
   HiDownload,
   HiOutlineCalendar,
-  HiExclamation,
 } from "react-icons/hi";
 import { FaWhatsapp } from "react-icons/fa";
 import { useLang } from "../i18n/LanguageContext";
@@ -28,14 +27,10 @@ import { timeAgo, exportLeadsCsv } from "../lib/format";
 
 const DAY = 86400000;
 
-const STAGE_ACCENT = {
-  new: { dot: "bg-alliance-yellow", text: "text-alliance-yellow", bar: "from-alliance-yellow/60", solid: "bg-alliance-yellow" },
-  contacted: { dot: "bg-sky-400", text: "text-sky-300", bar: "from-sky-400/60", solid: "bg-sky-400" },
-  scheduled: { dot: "bg-violet-400", text: "text-violet-300", bar: "from-violet-400/60", solid: "bg-violet-400" },
-  attended: { dot: "bg-amber-400", text: "text-amber-300", bar: "from-amber-400/60", solid: "bg-amber-400" },
-  won: { dot: "bg-emerald-400", text: "text-emerald-300", bar: "from-emerald-400/60", solid: "bg-emerald-400" },
-  lost: { dot: "bg-rose-500", text: "text-rose-400", bar: "from-rose-500/60", solid: "bg-rose-500" },
-};
+// Minimalist, monochrome palette. Stage is conveyed by column/label, not colour.
+// "won" keeps a single subtle positive cue; everything else is neutral.
+const NEUTRAL_DOT = "bg-alliance-light/25";
+const stageDot = (stage) => (stage === "won" ? "bg-alliance-yellow" : NEUTRAL_DOT);
 
 const lastActivity = (l) => {
   let ts = l.createdAt;
@@ -43,7 +38,6 @@ const lastActivity = (l) => {
   (l.activity || []).forEach((a) => (ts = Math.max(ts, a.createdAt)));
   return ts;
 };
-const isStale = (l) => !["won", "lost"].includes(l.stage) && Date.now() - lastActivity(l) > 4 * DAY;
 const taskPending = (l) => l.task && (isOverdue(l.task.due) || isDueToday(l.task.due));
 
 export default function Admin() {
@@ -192,12 +186,11 @@ function Overview({ leads, t, lang, stats, onOpen }) {
           <div className="mt-5 flex flex-col gap-3">
             {STAGES.map((s) => {
               const count = leads.filter((l) => l.stage === s).length;
-              const accent = STAGE_ACCENT[s];
               return (
                 <div key={s} className="flex items-center gap-3">
                   <span className="w-28 shrink-0 text-xs text-alliance-light/60">{t(`admin.stage.${s}`)}</span>
                   <div className="h-6 flex-1 overflow-hidden rounded-md bg-white/5">
-                    <div className={`h-full rounded-md ${accent.solid} transition-all`} style={{ width: `${(count / maxStage) * 100}%`, minWidth: count ? "1.5rem" : 0 }} />
+                    <div className="h-full rounded-md bg-alliance-light/20 transition-all" style={{ width: `${(count / maxStage) * 100}%`, minWidth: count ? "1.5rem" : 0 }} />
                   </div>
                   <span className="w-6 shrink-0 text-right text-sm font-semibold text-alliance-light">{count}</span>
                 </div>
@@ -211,14 +204,14 @@ function Overview({ leads, t, lang, stats, onOpen }) {
           <section className="rounded-2xl border border-white/8 bg-alliance-gray/40 p-6">
             <h3 className="font-display text-xl tracking-wide text-alliance-light">{t("admin.sourcesTitle")}</h3>
             <div className="mt-5 flex flex-col gap-3">
-              <SourceBar label={t("admin.sourceForm")} count={formCount} total={leads.length} className="bg-alliance-yellow" />
-              <SourceBar label={t("admin.sourceManual")} count={manualCount} total={leads.length} className="bg-sky-400" />
+              <SourceBar label={t("admin.sourceForm")} count={formCount} total={leads.length} className="bg-alliance-light/30" />
+              <SourceBar label={t("admin.sourceManual")} count={manualCount} total={leads.length} className="bg-alliance-light/15" />
             </div>
           </section>
 
           <section className="rounded-2xl border border-white/8 bg-alliance-gray/40 p-6">
             <h3 className="flex items-center gap-2 font-display text-xl tracking-wide text-alliance-light">
-              <HiOutlineCalendar className="text-lg text-rose-400" /> {t("admin.openTasks")}
+              <HiOutlineCalendar className="text-lg text-alliance-light/40" /> {t("admin.openTasks")}
             </h3>
             <ul className="mt-4 flex flex-col gap-2">
               {due.length === 0 ? (
@@ -232,7 +225,7 @@ function Overview({ leads, t, lang, stats, onOpen }) {
                         <p className="truncate text-sm font-medium text-alliance-light">{l.name}</p>
                         <p className="truncate text-xs text-alliance-light/50">{l.task.text}</p>
                       </div>
-                      <span className={`shrink-0 text-xs font-semibold ${isOverdue(l.task.due) ? "text-rose-400" : "text-amber-300"}`}>
+                      <span className={`shrink-0 text-xs font-semibold ${isOverdue(l.task.due) ? "text-rose-400" : "text-alliance-light/50"}`}>
                         {isOverdue(l.task.due) ? t("admin.overdue") : t("admin.dueToday")}
                       </span>
                     </button>
@@ -276,7 +269,6 @@ function KanbanBoard({ leads, t, lang, onSelect, onDelete }) {
     <div className="flex gap-4 overflow-x-auto pb-4">
       {STAGES.map((stage) => {
         const items = leads.filter((l) => l.stage === stage);
-        const accent = STAGE_ACCENT[stage];
         const isOver = overStage === stage;
         return (
           <div
@@ -291,18 +283,12 @@ function KanbanBoard({ leads, t, lang, onSelect, onDelete }) {
               isOver ? "border-alliance-yellow/60 bg-alliance-gray/70" : "border-white/8"
             }`}
           >
-            <div className="relative overflow-hidden rounded-t-2xl">
-              <div className={`absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r ${accent.bar} to-transparent`} />
-              <div className="flex items-center justify-between px-4 py-3.5">
-                <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${accent.dot}`} />
-                  <span className="text-sm font-semibold text-alliance-light">{t(`admin.stage.${stage}`)}</span>
-                </div>
-                <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs font-bold text-alliance-light/60">{items.length}</span>
-              </div>
+            <div className="flex items-center justify-between px-4 py-3.5">
+              <span className="text-sm font-semibold text-alliance-light/90">{t(`admin.stage.${stage}`)}</span>
+              <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs font-bold text-alliance-light/50">{items.length}</span>
             </div>
 
-            <div className="flex min-h-24 flex-1 flex-col gap-2.5 p-3">
+            <div className="flex min-h-24 flex-1 flex-col gap-2.5 p-3 pt-0">
               {items.length === 0 ? (
                 <p className="py-8 text-center text-xs text-alliance-light/25">{t("admin.empty")}</p>
               ) : (
@@ -310,7 +296,6 @@ function KanbanBoard({ leads, t, lang, onSelect, onDelete }) {
                   <LeadCard
                     key={lead.id}
                     lead={lead}
-                    accent={accent}
                     lang={lang}
                     t={t}
                     dragging={dragId === lead.id}
@@ -332,13 +317,12 @@ function KanbanBoard({ leads, t, lang, onSelect, onDelete }) {
   );
 }
 
-function LeadCard({ lead, accent, lang, t, dragging, onOpen, onDragStart, onDragEnd, onDelete }) {
+function LeadCard({ lead, lang, t, dragging, onOpen, onDragStart, onDragEnd, onDelete }) {
   const stop = (e) => e.stopPropagation();
   const followups = lead.followups?.length || 0;
-  const stale = isStale(lead);
   const wa = (lead.phone || "").replace(/\D/g, "");
   const due = lead.task?.due;
-  const dueState = due ? (isOverdue(due) ? "overdue" : isDueToday(due) ? "today" : "ok") : null;
+  const overdue = due && isOverdue(due);
 
   return (
     <article
@@ -346,69 +330,55 @@ function LeadCard({ lead, accent, lang, t, dragging, onOpen, onDragStart, onDrag
       onClick={onOpen}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`group relative cursor-pointer rounded-xl border border-white/8 bg-alliance-black p-3.5 transition-all hover:border-alliance-yellow/40 active:cursor-grabbing ${
+      className={`group relative cursor-pointer rounded-xl border border-white/8 bg-alliance-black p-3.5 transition-colors hover:border-white/20 active:cursor-grabbing ${
         dragging ? "opacity-40" : ""
       }`}
     >
       <div className="flex items-center gap-2.5">
         <Avatar name={lead.name} size="sm" />
-        <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-alliance-light">{lead.name}</h3>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold text-alliance-light">{lead.name}</h3>
+          <p className="truncate text-xs text-alliance-light/45">{lead.email}</p>
+        </div>
       </div>
 
       {/* Hover quick actions */}
       <div className="absolute right-2.5 top-2.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         {wa && (
-          <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" onClick={stop} aria-label="WhatsApp" className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-alliance-light/60 transition-colors hover:bg-whatsapp/20 hover:text-whatsapp">
+          <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" onClick={stop} aria-label="WhatsApp" className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-alliance-light/50 transition-colors hover:text-alliance-light">
             <FaWhatsapp className="text-sm" />
           </a>
         )}
-        <a href={`mailto:${lead.email}`} onClick={stop} aria-label="Email" className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-alliance-light/60 transition-colors hover:bg-white/10 hover:text-alliance-yellow">
-          <HiOutlineMail className="text-sm" />
-        </a>
-        <button onClick={(e) => { stop(e); onDelete(); }} aria-label="Delete" className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-alliance-light/60 transition-colors hover:bg-rose-500/20 hover:text-rose-400">
+        <button onClick={(e) => { stop(e); onDelete(); }} aria-label="Delete" className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-alliance-light/50 transition-colors hover:text-rose-400">
           <HiTrash className="text-sm" />
         </button>
       </div>
-
-      <p className="mt-2 truncate text-xs text-alliance-light/50">{lead.email}</p>
 
       {/* Tags */}
       {lead.tags?.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-1">
           {lead.tags.slice(0, 3).map((tg) => (
-            <span key={tg} className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium text-alliance-light/60">#{tg}</span>
+            <span key={tg} className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium text-alliance-light/50">#{tg}</span>
           ))}
         </div>
       )}
 
-      {/* Task badge */}
+      {/* Task — only the due text; red only when overdue */}
       {due && (
-        <div className={`mt-2.5 flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium ${
-          dueState === "overdue" ? "bg-rose-500/10 text-rose-400" : dueState === "today" ? "bg-amber-400/10 text-amber-300" : "bg-white/5 text-alliance-light/55"
-        }`}>
-          <HiOutlineCalendar className="text-xs" />
+        <div className={`mt-2.5 flex items-center gap-1.5 text-[11px] ${overdue ? "text-rose-400" : "text-alliance-light/50"}`}>
+          <HiOutlineCalendar className="shrink-0 text-xs" />
           <span className="truncate">{lead.task.text}</span>
         </div>
       )}
 
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/5 pt-2.5">
-        <span className={`rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${accent.text}`}>
-          {lead.source === "manual" ? t("admin.sourceManual") : t("admin.sourceForm")}
-        </span>
-        <div className="flex items-center gap-2 text-[10px] text-alliance-light/35">
-          {stale && (
-            <span className="inline-flex items-center gap-0.5 text-amber-400/80" title={t("admin.stalled")}>
-              <HiExclamation className="text-xs" />
-            </span>
-          )}
-          {followups > 0 && (
-            <span className="inline-flex items-center gap-0.5">
-              <HiOutlineChat className="text-xs" />
-              {followups}
-            </span>
-          )}
-          <span>{timeAgo(lastActivity(lead), lang)}</span>
-        </div>
+      <div className="mt-3 flex items-center justify-end gap-3 border-t border-white/5 pt-2.5 text-[10px] text-alliance-light/35">
+        {followups > 0 && (
+          <span className="inline-flex items-center gap-0.5">
+            <HiOutlineChat className="text-xs" />
+            {followups}
+          </span>
+        )}
+        <span>{timeAgo(lastActivity(lead), lang)}</span>
       </div>
     </article>
   );
@@ -440,7 +410,6 @@ function ContactsTable({ leads, t, lang, onSelect, onDelete }) {
         </thead>
         <tbody>
           {leads.map((lead) => {
-            const accent = STAGE_ACCENT[lead.stage];
             return (
               <tr key={lead.id} onClick={() => onSelect(lead.id)} className="cursor-pointer border-b border-white/5 transition-colors hover:bg-white/[0.03]">
                 <td className="px-5 py-3.5">
@@ -455,7 +424,7 @@ function ContactsTable({ leads, t, lang, onSelect, onDelete }) {
                 <td className="px-5 py-3.5 text-alliance-light/65">{lead.phone || "—"}</td>
                 <td className="px-5 py-3.5">
                   <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-alliance-light/80">
-                    <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} />
+                    <span className={`h-1.5 w-1.5 rounded-full ${stageDot(lead.stage)}`} />
                     {t(`admin.stage.${lead.stage}`)}
                   </span>
                 </td>
@@ -479,10 +448,10 @@ function ContactsTable({ leads, t, lang, onSelect, onDelete }) {
 
 /* ---------------- Stat + Add modal ---------------- */
 
-function Stat({ icon: Icon, label, value, accent }) {
+function Stat({ icon: Icon, label, value }) {
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-white/8 bg-alliance-gray/40 px-5 py-4">
-      <span className={`flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-xl ${accent}`}>
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-xl text-alliance-light/40">
         <Icon />
       </span>
       <div>

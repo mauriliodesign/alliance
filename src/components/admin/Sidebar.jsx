@@ -68,7 +68,7 @@ export default function Sidebar({ view, setView, open, onClose, dueCount = 0 }) 
                 <Icon className="text-lg" />
                 {t(item.label)}
                 {item.id === "pipeline" && dueCount > 0 ? (
-                  <span className="ml-auto rounded-full bg-rose-500/90 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                  <span className="ml-auto rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold leading-none text-alliance-light/70">
                     {dueCount}
                   </span>
                 ) : (

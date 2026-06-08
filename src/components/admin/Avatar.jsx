@@ -1,4 +1,4 @@
-import { initials, colorFromString } from "../../lib/format";
+import { initials } from "../../lib/format";
 
 export default function Avatar({ name, size = "md" }) {
   const sizes = {
@@ -8,8 +8,7 @@ export default function Avatar({ name, size = "md" }) {
   };
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${sizes[size]}`}
-      style={{ backgroundColor: colorFromString(name) }}
+      className={`flex shrink-0 items-center justify-center rounded-full bg-white/8 font-semibold text-alliance-light/80 ${sizes[size]}`}
       aria-hidden="true"
     >
       {initials(name)}

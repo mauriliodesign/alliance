@@ -34,14 +34,7 @@ import {
   isDueToday,
 } from "../../lib/leadsStore";
 
-const STAGE_DOT = {
-  new: "bg-alliance-yellow",
-  contacted: "bg-sky-400",
-  scheduled: "bg-violet-400",
-  attended: "bg-amber-400",
-  won: "bg-emerald-400",
-  lost: "bg-rose-500",
-};
+const stageDot = (stage) => (stage === "won" ? "bg-alliance-yellow" : "bg-alliance-light/25");
 
 const TAG_SUGGESTIONS = ["adultos", "kids", "no-gi", "competidor", "reabertura"];
 
@@ -199,7 +192,7 @@ export default function LeadDrawer({ lead, onClose }) {
                       : "border-white/10 text-alliance-light/55 hover:border-white/25 hover:text-alliance-light"
                   }`}
                 >
-                  <span className={`h-1.5 w-1.5 rounded-full ${STAGE_DOT[stage]}`} />
+                  <span className={`h-1.5 w-1.5 rounded-full ${stageDot(stage)}`} />
                   {t(`admin.stage.${stage}`)}
                 </button>
               );
@@ -302,16 +295,12 @@ export default function LeadDrawer({ lead, onClose }) {
             {lead.task ? (
               <div
                 className={`flex items-start justify-between gap-3 rounded-2xl border p-4 ${
-                  dueState === "overdue"
-                    ? "border-rose-500/40 bg-rose-500/5"
-                    : dueState === "today"
-                    ? "border-amber-400/40 bg-amber-400/5"
-                    : "border-white/8 bg-alliance-black/50"
+                  dueState === "overdue" ? "border-rose-500/40 bg-rose-500/5" : "border-white/8 bg-alliance-black/50"
                 }`}
               >
                 <div>
                   <p className="text-sm text-alliance-light/85">{lead.task.text}</p>
-                  <p className={`mt-1 text-xs font-medium ${dueState === "overdue" ? "text-rose-400" : dueState === "today" ? "text-amber-300" : "text-alliance-light/50"}`}>
+                  <p className={`mt-1 text-xs font-medium ${dueState === "overdue" ? "text-rose-400" : "text-alliance-light/50"}`}>
                     {dueState === "overdue" ? `${t("admin.overdue")} · ` : dueState === "today" ? `${t("admin.dueToday")} · ` : ""}
                     {fmt(new Date(lead.task.due).getTime())}
                   </p>
@@ -427,10 +416,10 @@ function TimelineItem({ item, t, lang, onDeleteNote }) {
   }
 
   const meta = {
-    created: { icon: HiSparkles, color: "text-alliance-yellow", label: t("admin.actCreated") },
-    stage: { icon: HiArrowRight, color: "text-sky-300", label: `${t("admin.actStageTo")} ${t(`admin.stage.${item.to}`)}` },
-    task: { icon: HiOutlineCalendar, color: "text-violet-300", label: `${t("admin.actTaskSet")}: ${item.text}` },
-  }[item.kind] || { icon: HiOutlineChat, color: "text-alliance-light/50", label: item.text || "" };
+    created: { icon: HiSparkles, color: "text-alliance-light/45", label: t("admin.actCreated") },
+    stage: { icon: HiArrowRight, color: "text-alliance-light/45", label: `${t("admin.actStageTo")} ${t(`admin.stage.${item.to}`)}` },
+    task: { icon: HiOutlineCalendar, color: "text-alliance-light/45", label: `${t("admin.actTaskSet")}: ${item.text}` },
+  }[item.kind] || { icon: HiOutlineChat, color: "text-alliance-light/45", label: item.text || "" };
 
   const Icon = meta.icon;
   return (
