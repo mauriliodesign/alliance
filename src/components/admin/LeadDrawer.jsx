@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   HiX,
   HiOutlineMail,
@@ -13,6 +13,7 @@ import {
   HiSparkles,
   HiOutlineCalendar,
   HiOutlineStar,
+  HiChevronDown,
 } from "react-icons/hi";
 import { FaWhatsapp, FaInstagram } from "react-icons/fa";
 import { useLang } from "../../i18n/LanguageContext";
@@ -182,24 +183,8 @@ export default function LeadDrawer({ lead, onClose }) {
           </div>
 
           {/* Stage selector */}
-          <div className="mt-6 flex flex-wrap gap-1.5">
-            {STAGES.map((stage) => {
-              const active = lead.stage === stage;
-              return (
-                <button
-                  key={stage}
-                  onClick={() => moveLead(lead.id, stage)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                    active
-                      ? "border-alliance-yellow bg-alliance-yellow/15 text-alliance-yellow"
-                      : "border-white/10 text-alliance-light/55 hover:border-white/25 hover:text-alliance-light"
-                  }`}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${STAGE_DOT[stage]}`} />
-                  {t(`admin.stage.${stage}`)}
-                </button>
-              );
-            })}
+          <div className="mt-6">
+            <StageDropdown stage={lead.stage} onChange={(s) => moveLead(lead.id, s)} t={t} />
           </div>
 
           {/* Contact info (with inline edit) */}
@@ -410,6 +395,57 @@ export default function LeadDrawer({ lead, onClose }) {
         </div>
       </aside>
     </>
+  );
+}
+
+function StageDropdown({ stage, onChange, t }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const onClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-alliance-black px-4 py-3 text-sm text-alliance-light transition-colors hover:border-white/25"
+      >
+        <span className={`h-2 w-2 rounded-full ${STAGE_DOT[stage]}`} />
+        <span className="font-medium">{t(`admin.stage.${stage}`)}</span>
+        <HiChevronDown className={`ml-auto text-base text-alliance-light/50 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <ul className="absolute z-10 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-alliance-gray shadow-2xl">
+          {STAGES.map((s) => {
+            const active = s === stage;
+            return (
+              <li key={s}>
+                <button
+                  onClick={() => {
+                    onChange(s);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-white/5 ${
+                    active ? "text-alliance-yellow" : "text-alliance-light/75"
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${STAGE_DOT[s]}`} />
+                  {t(`admin.stage.${s}`)}
+                  {active && <HiCheck className="ml-auto text-base" />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 
