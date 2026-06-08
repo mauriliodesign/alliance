@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { HiArrowLeft, HiOutlineMail, HiOutlineLockClosed, HiEye, HiEyeOff } from "react-icons/hi";
-import { FaWhatsapp } from "react-icons/fa";
 import { useLang } from "../i18n/LanguageContext";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 
@@ -31,7 +30,7 @@ export default function Login() {
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-alliance-black via-alliance-black/55 to-alliance-black/30" />
-        <div className="absolute inset-0 flex flex-col justify-between p-12">
+        <div className="absolute inset-0 flex flex-col p-12">
           <Link to="/" className="flex w-fit items-center">
             <img
               src="/brand/logo-alliance-team.png"
@@ -39,16 +38,6 @@ export default function Login() {
               className="h-14 w-auto"
             />
           </Link>
-          <div>
-            <h2 className="font-display text-5xl leading-[0.95] text-alliance-light xl:text-6xl">
-              Alliance Lisboa
-              <br />
-              <span className="text-alliance-yellow">{t("login.tagline")}</span>
-            </h2>
-            <p className="mt-4 max-w-md text-sm text-alliance-light/60">
-              Rua Almirante Gago Coutinho 19B, Moscavide · Lisboa
-            </p>
-          </div>
         </div>
       </div>
 
@@ -156,17 +145,6 @@ export default function Login() {
                 {status === "loading" ? t("login.loading") : t("login.submit")}
               </button>
             </form>
-
-            {/* WhatsApp shortcut */}
-            <a
-              href="https://wa.me/351924851474"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-white/15 px-6 py-3.5 text-sm font-semibold text-alliance-light transition-colors hover:border-whatsapp hover:text-whatsapp"
-            >
-              <FaWhatsapp className="text-lg" />
-              WhatsApp
-            </a>
 
             {/* No account */}
             <p className="mt-8 text-center text-sm text-alliance-light/60">

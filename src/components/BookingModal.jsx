@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { HiX, HiCheckCircle } from "react-icons/hi";
 import { useLang } from "../i18n/LanguageContext";
 import { useBooking } from "./BookingContext";
+import { addLead } from "../lib/leadsStore";
 
 const PHONE = "351924851474";
 
@@ -38,6 +39,8 @@ export default function BookingModal() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setStatus("loading");
+    // Persist the lead so it shows up in the /admin sales pipeline.
+    addLead({ name: form.name, email: form.email, phone: form.phone, source: "form" });
     // No backend in this clone — forward the lead to WhatsApp and show success.
     const msg = encodeURIComponent(
       `${t("modal.title")}\n${t("modal.nameLabel")}: ${form.name}\n${t("modal.emailLabel")}: ${form.email}\n${t("modal.phoneLabel")}: ${form.phone}`
