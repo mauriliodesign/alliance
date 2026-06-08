@@ -270,6 +270,8 @@ export const translations = {
     "admin.calMonth": "Mês",
     "admin.calEmpty": "Sem compromissos",
     "admin.gcalSoon": "Integração com Google Calendar em breve",
+    "admin.addFollowupBtn": "Adicionar follow-up",
+    "admin.selectLead": "Selecionar contacto",
   },
   en: {
     "navbar.programs": "Programs",
@@ -542,6 +544,8 @@ export const translations = {
     "admin.calMonth": "Month",
     "admin.calEmpty": "No appointments",
     "admin.gcalSoon": "Google Calendar integration coming soon",
+    "admin.addFollowupBtn": "Add follow-up",
+    "admin.selectLead": "Select lead",
   },
   es: {
     "navbar.programs": "Programas",
@@ -814,6 +818,8 @@ export const translations = {
     "admin.calMonth": "Mes",
     "admin.calEmpty": "Sin compromisos",
     "admin.gcalSoon": "Integración con Google Calendar próximamente",
+    "admin.addFollowupBtn": "Añadir seguimiento",
+    "admin.selectLead": "Seleccionar contacto",
   },
 };
 

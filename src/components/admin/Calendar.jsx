@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { HiChevronLeft, HiChevronRight, HiOutlineCalendar } from "react-icons/hi";
+import { HiChevronLeft, HiChevronRight, HiOutlineCalendar, HiPlus } from "react-icons/hi";
 import { useLang } from "../../i18n/LanguageContext";
 import { STAGE_DOT } from "../../lib/format";
 
@@ -14,7 +14,7 @@ function startOfWeekMon(date) {
   return d;
 }
 
-export default function Calendar({ leads, onOpen }) {
+export default function Calendar({ leads, onOpen, onDayClick }) {
   const { t, lang } = useLang();
   const [view, setView] = useState("month");
   const [cursor, setCursor] = useState(() => new Date());
@@ -133,20 +133,25 @@ export default function Calendar({ leads, onOpen }) {
           return (
             <div
               key={key}
-              className={`flex flex-col rounded-lg border p-1.5 ${view === "week" ? "min-h-64" : "min-h-24"} ${
+              onClick={() => onDayClick?.(key)}
+              className={`group flex cursor-pointer flex-col rounded-lg border p-1.5 transition-colors hover:border-white/20 ${view === "week" ? "min-h-64" : "min-h-24"} ${
                 isToday ? "border-alliance-yellow/50 bg-alliance-yellow/[0.06]" : "border-white/5"
               } ${inMonth ? "" : "opacity-35"}`}
             >
-              <span className={`mb-1 text-xs ${isToday ? "font-bold text-alliance-yellow" : "text-alliance-light/55"}`}>
-                {d.getDate()}
-              </span>
+              <div className="mb-1 flex items-center justify-between">
+                <span className={`text-xs ${isToday ? "font-bold text-alliance-yellow" : "text-alliance-light/55"}`}>{d.getDate()}</span>
+                <HiPlus className="text-xs text-alliance-light/0 transition-colors group-hover:text-alliance-light/40" />
+              </div>
               <div className="flex flex-1 flex-col gap-1">
                 {events.slice(0, max).map((l) => {
                   const overdue = l.task.due < todayStr;
                   return (
                     <button
                       key={l.id}
-                      onClick={() => onOpen(l.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpen(l.id);
+                      }}
                       title={`${l.name} — ${l.task.text}`}
                       className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] transition-colors hover:bg-white/10"
                     >

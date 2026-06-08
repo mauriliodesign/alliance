@@ -21,6 +21,7 @@ import LanguageSwitcher from "../components/LanguageSwitcher";
 import Sidebar from "../components/admin/Sidebar";
 import LeadDrawer from "../components/admin/LeadDrawer";
 import Calendar from "../components/admin/Calendar";
+import DayDrawer from "../components/admin/DayDrawer";
 import Avatar from "../components/admin/Avatar";
 import { useLeads } from "../hooks/useLeads";
 import { STAGES, addLead, moveLead, deleteLead, restoreLead, isOverdue, isDueToday } from "../lib/leadsStore";
@@ -45,6 +46,7 @@ export default function Admin() {
   const [adding, setAdding] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
 
   const selectedLead = useMemo(() => leads.find((l) => l.id === selectedId) || null, [leads, selectedId]);
 
@@ -107,7 +109,7 @@ export default function Admin() {
 
         <main className="px-5 py-6 sm:px-8">
           {view === "overview" ? (
-            <Overview leads={leads} t={t} lang={lang} stats={{ total, won, conversion, dueCount }} onOpen={setSelectedId} />
+            <Overview leads={leads} t={t} stats={{ total, won, conversion, dueCount }} onOpen={setSelectedId} onDayClick={setSelectedDay} />
           ) : (
             <>
               {/* Stats */}
@@ -152,6 +154,17 @@ export default function Admin() {
       </div>
 
       {adding && <AddLeadModal t={t} onClose={() => setAdding(false)} />}
+      {selectedDay && (
+        <DayDrawer
+          day={selectedDay}
+          leads={leads}
+          onClose={() => setSelectedDay(null)}
+          onOpenLead={(id) => {
+            setSelectedDay(null);
+            setSelectedId(id);
+          }}
+        />
+      )}
       <LeadDrawer lead={selectedLead} onClose={() => setSelectedId(null)} />
     </div>
   );
@@ -159,7 +172,7 @@ export default function Admin() {
 
 /* ---------------- Overview ---------------- */
 
-function Overview({ leads, t, stats, onOpen }) {
+function Overview({ leads, t, stats, onOpen, onDayClick }) {
   const thisWeek = leads.filter((l) => Date.now() - l.createdAt < 7 * DAY).length;
 
   return (
@@ -171,7 +184,7 @@ function Overview({ leads, t, stats, onOpen }) {
         <Stat icon={HiTrendingUp} label={t("admin.conversion")} value={`${stats.conversion}%`} />
       </div>
 
-      <Calendar leads={leads} onOpen={onOpen} />
+      <Calendar leads={leads} onOpen={onOpen} onDayClick={onDayClick} />
     </div>
   );
 }
