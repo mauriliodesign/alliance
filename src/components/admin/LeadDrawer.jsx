@@ -17,7 +17,7 @@ import { FaWhatsapp } from "react-icons/fa";
 import { useLang } from "../../i18n/LanguageContext";
 import { useToast } from "../ToastContext";
 import Avatar from "./Avatar";
-import { timeAgo } from "../../lib/format";
+import { timeAgo, STAGE_DOT } from "../../lib/format";
 import {
   STAGES,
   moveLead,
@@ -33,8 +33,6 @@ import {
   isOverdue,
   isDueToday,
 } from "../../lib/leadsStore";
-
-const stageDot = (stage) => (stage === "won" ? "bg-alliance-yellow" : "bg-alliance-light/25");
 
 const TAG_SUGGESTIONS = ["adultos", "kids", "no-gi", "competidor", "reabertura"];
 
@@ -192,7 +190,7 @@ export default function LeadDrawer({ lead, onClose }) {
                       : "border-white/10 text-alliance-light/55 hover:border-white/25 hover:text-alliance-light"
                   }`}
                 >
-                  <span className={`h-1.5 w-1.5 rounded-full ${stageDot(stage)}`} />
+                  <span className={`h-1.5 w-1.5 rounded-full ${STAGE_DOT[stage]}`} />
                   {t(`admin.stage.${stage}`)}
                 </button>
               );

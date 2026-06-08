@@ -17,6 +17,16 @@ export function timeAgo(ts, lang = "pt") {
   return rtf.format(0, "minute"); // "agora mesmo"
 }
 
+// One small colour cue per stage (used only as a dot, like the selected menu item).
+export const STAGE_DOT = {
+  new: "bg-alliance-yellow",
+  contacted: "bg-sky-400",
+  scheduled: "bg-indigo-400",
+  attended: "bg-amber-400",
+  won: "bg-emerald-400",
+  lost: "bg-rose-500",
+};
+
 export function initials(name = "") {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";

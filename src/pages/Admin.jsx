@@ -23,14 +23,9 @@ import LeadDrawer from "../components/admin/LeadDrawer";
 import Avatar from "../components/admin/Avatar";
 import { useLeads } from "../hooks/useLeads";
 import { STAGES, addLead, moveLead, deleteLead, restoreLead, isOverdue, isDueToday } from "../lib/leadsStore";
-import { timeAgo, exportLeadsCsv } from "../lib/format";
+import { timeAgo, exportLeadsCsv, STAGE_DOT } from "../lib/format";
 
 const DAY = 86400000;
-
-// Minimalist, monochrome palette. Stage is conveyed by column/label, not colour.
-// "won" keeps a single subtle positive cue; everything else is neutral.
-const NEUTRAL_DOT = "bg-alliance-light/25";
-const stageDot = (stage) => (stage === "won" ? "bg-alliance-yellow" : NEUTRAL_DOT);
 
 const lastActivity = (l) => {
   let ts = l.createdAt;
@@ -284,7 +279,10 @@ function KanbanBoard({ leads, t, lang, onSelect, onDelete }) {
             }`}
           >
             <div className="flex items-center justify-between px-4 py-3.5">
-              <span className="text-sm font-semibold text-alliance-light/90">{t(`admin.stage.${stage}`)}</span>
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${STAGE_DOT[stage]}`} />
+                <span className="text-sm font-semibold text-alliance-light/90">{t(`admin.stage.${stage}`)}</span>
+              </div>
               <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs font-bold text-alliance-light/50">{items.length}</span>
             </div>
 
@@ -424,7 +422,7 @@ function ContactsTable({ leads, t, lang, onSelect, onDelete }) {
                 <td className="px-5 py-3.5 text-alliance-light/65">{lead.phone || "—"}</td>
                 <td className="px-5 py-3.5">
                   <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-alliance-light/80">
-                    <span className={`h-1.5 w-1.5 rounded-full ${stageDot(lead.stage)}`} />
+                    <span className={`h-1.5 w-1.5 rounded-full ${STAGE_DOT[lead.stage]}`} />
                     {t(`admin.stage.${lead.stage}`)}
                   </span>
                 </td>
