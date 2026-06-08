@@ -1,175 +1,220 @@
-// Lightweight client-side store for sales-pipeline leads.
-// Leads submitted through the site's booking form are persisted here
-// (localStorage) and surfaced in the /admin dashboard.
-
-const KEY = "ajj-leads";
-const listeners = new Set();
+// Supabase-backed data layer for leads (replaces the old localStorage store).
+// Keeps the SAME function names/signatures so components stay unchanged.
+// Reads are assembled into the shape the UI already expects:
+//   lead = { id, name, email, phone, instagram, source, stage, tags[],
+//            createdAt(ms), followups[], activity[], task|null, insight|null }
+import { supabase } from "./supabaseClient";
 
 export const STAGES = ["new", "contacted", "scheduled", "attended", "won", "lost"];
 
-const uid = () =>
-  typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const pad = (n) => String(n).padStart(2, "0");
+const dstr = (offsetDays = 0) => {
+  const d = new Date(Date.now() + offsetDays * 86400000);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+export const isOverdue = (due) => Boolean(due) && due < dstr(0);
+export const isDueToday = (due) => due === dstr(0);
 
-const day = 86400000;
-const dstr = (offsetDays) => new Date(Date.now() + offsetDays * day).toISOString().slice(0, 10);
+const ms = (iso) => (iso ? new Date(iso).getTime() : Date.now());
 
-const SEED = [
-  { id: uid(), name: "João Pereira", email: "joao.pereira@email.com", phone: "+351 912 345 678", source: "form", stage: "new", createdAt: Date.now() - day * 0.2, tags: ["adultos"], interest: "adults", instagram: "joao.bjj", task: { text: "Ligar a confirmar interesse", due: dstr(1) } },
-  { id: uid(), name: "Marta Silva", email: "marta.silva@email.com", phone: "+351 933 221 100", source: "form", stage: "new", createdAt: Date.now() - day * 4.1 },
-  { id: uid(), name: "Ricardo Gomes", email: "r.gomes@email.com", phone: "+351 961 010 202", source: "form", stage: "contacted", createdAt: Date.now() - day * 2.4, tags: ["no-gi"], task: { text: "Enviar horários por WhatsApp", due: dstr(-1) }, followups: [{ id: uid(), text: "Primeiro contacto feito, vai pensar.", createdAt: Date.now() - day * 2 }] },
-  { id: uid(), name: "Ana Costa", email: "ana.costa@email.com", phone: "+351 915 998 877", source: "form", stage: "scheduled", createdAt: Date.now() - day * 3.2, tags: ["kids"], interest: "kids", instagram: "ana.costa", task: { text: "Aula experimental marcada", due: dstr(0) } },
-  { id: uid(), name: "Pedro Martins", email: "pedro.m@email.com", phone: "+351 962 334 556", source: "manual", stage: "attended", createdAt: Date.now() - day * 5, followups: [{ id: uid(), text: "Gostou da aula, decide até sexta.", createdAt: Date.now() - day * 1 }] },
-  { id: uid(), name: "Sofia Almeida", email: "sofia.a@email.com", phone: "+351 934 778 990", source: "form", stage: "won", createdAt: Date.now() - day * 7, tags: ["adultos", "competidor"] },
-  { id: uid(), name: "Bruno Dias", email: "bruno.dias@email.com", phone: "+351 911 223 344", source: "form", stage: "lost", createdAt: Date.now() - day * 9 },
-];
-
-function normalize(l) {
-  return { followups: [], tags: [], activity: [], task: null, insight: null, ...l };
+// --- binding to React Query + active org (set by <DataBridge/>) ---
+let _qc = null;
+let _orgId = null;
+let _cache = [];
+export function bindData(queryClient, orgId) {
+  _qc = queryClient;
+  _orgId = orgId;
+}
+async function refresh() {
+  if (_qc && _orgId) await _qc.invalidateQueries({ queryKey: ["leads", _orgId] });
 }
 
-let cache = null;
-
-function load() {
-  let raw;
-  try {
-    raw = localStorage.getItem(KEY);
-  } catch {
-    /* ignore */
-  }
-  let list;
-  if (raw) {
-    try {
-      list = JSON.parse(raw);
-    } catch {
-      list = SEED;
-    }
-  } else {
-    list = SEED;
-    try {
-      localStorage.setItem(KEY, JSON.stringify(SEED));
-    } catch {
-      /* ignore */
-    }
-  }
-  return list.map(normalize);
+function mapLead(r) {
+  const followups = (r.followups || [])
+    .map((f) => ({ id: f.id, text: f.body, createdAt: ms(f.created_at) }))
+    .sort((a, b) => b.createdAt - a.createdAt);
+  const activity = (r.lead_activity || [])
+    .map((a) => ({ id: a.id, type: a.type, to: a.to_stage, from: a.from_stage, text: a.detail, createdAt: ms(a.created_at) }))
+    .sort((a, b) => b.createdAt - a.createdAt);
+  const openTasks = (r.tasks || [])
+    .filter((t) => !t.done)
+    .sort((a, b) => ((a.due_date || "") < (b.due_date || "") ? -1 : 1));
+  const task = openTasks[0] ? { id: openTasks[0].id, text: openTasks[0].title, due: openTasks[0].due_date } : null;
+  const ins = (r.lead_insights || [])[0];
+  const insight = ins
+    ? { closeProbability: ins.close_probability, ...(ins.payload || {}), generatedAt: ms(ins.generated_at), lang: ins.lang }
+    : null;
+  return {
+    id: r.id,
+    name: r.name,
+    email: r.email || "",
+    phone: r.phone || "",
+    instagram: r.instagram || "",
+    source: r.source,
+    stage: r.stage,
+    tags: r.tags || [],
+    createdAt: ms(r.created_at),
+    followups,
+    activity,
+    task,
+    insight,
+  };
 }
 
-function read() {
-  if (!cache) cache = load().sort((a, b) => b.createdAt - a.createdAt);
-  return cache;
+export async function fetchLeads(orgId) {
+  if (!orgId) return [];
+  const { data, error } = await supabase
+    .from("leads")
+    .select("*, followups(*), tasks(*), lead_activity(*), lead_insights(*)")
+    .eq("org_id", orgId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  _cache = (data || []).map(mapLead);
+  return _cache;
 }
 
-function write(leads) {
-  cache = [...leads].sort((a, b) => b.createdAt - a.createdAt);
-  try {
-    localStorage.setItem(KEY, JSON.stringify(cache));
-  } catch {
-    /* ignore */
-  }
-  listeners.forEach((fn) => fn());
-}
-
-function patch(id, fn) {
-  write(read().map((l) => (l.id === id ? fn(l) : l)));
-}
-
-function logActivity(lead, type, extra = {}) {
-  return { ...lead, activity: [{ id: uid(), type, createdAt: Date.now(), ...extra }, ...(lead.activity || [])] };
-}
-
+// Synchronous snapshot (used by CSV export).
 export function getLeads() {
-  return read();
+  return _cache;
 }
 
-export function addLead(lead) {
-  const item = normalize({ id: uid(), createdAt: Date.now(), stage: "new", source: "form", ...lead });
-  item.activity = [{ id: uid(), type: "created", createdAt: item.createdAt }];
-  write([item, ...read()]);
-  return item;
+const leadOf = (id) => _cache.find((l) => l.id === id);
+
+export async function addLead(lead) {
+  const { data } = await supabase
+    .from("leads")
+    .insert({
+      org_id: _orgId,
+      name: (lead.name || "").trim() || "Lead",
+      email: lead.email || null,
+      phone: lead.phone || null,
+      instagram: lead.instagram || null,
+      tags: lead.tags || [],
+      source: lead.source || "manual",
+      stage: "new",
+    })
+    .select("id")
+    .single();
+  if (data) await supabase.from("lead_activity").insert({ org_id: _orgId, lead_id: data.id, type: "created" });
+  await refresh();
+  return data;
 }
 
-export function updateLead(id, changes) {
-  patch(id, (l) => ({ ...l, ...changes }));
+export async function updateLead(id, changes) {
+  if ("insight" in changes) {
+    const ins = changes.insight;
+    if (ins) {
+      await supabase.from("lead_insights").upsert(
+        {
+          org_id: _orgId,
+          lead_id: id,
+          close_probability: ins.closeProbability,
+          payload: { signals: ins.signals, nextAction: ins.nextAction, suggestedMessage: ins.suggestedMessage, risks: ins.risks },
+          lang: ins.lang,
+          generated_at: new Date(ins.generatedAt || Date.now()).toISOString(),
+        },
+        { onConflict: "lead_id" }
+      );
+    }
+    const rest = { ...changes };
+    delete rest.insight;
+    if (Object.keys(rest).length) await supabase.from("leads").update(rest).eq("id", id);
+  } else {
+    await supabase.from("leads").update(changes).eq("id", id);
+  }
+  await refresh();
 }
 
-export function moveLead(id, stage) {
+export async function moveLead(id, stage) {
   if (!STAGES.includes(stage)) return;
-  patch(id, (l) => (l.stage === stage ? l : logActivity({ ...l, stage }, "stage", { from: l.stage, to: stage })));
+  const from = leadOf(id)?.stage;
+  if (from === stage) return;
+  await supabase.from("leads").update({ stage }).eq("id", id);
+  await supabase.from("lead_activity").insert({ org_id: _orgId, lead_id: id, type: "stage", from_stage: from, to_stage: stage });
+  await refresh();
 }
 
-export function addNote(id, text) {
-  const note = { id: uid(), text: text.trim(), createdAt: Date.now() };
-  patch(id, (l) => ({ ...l, followups: [note, ...(l.followups || [])] }));
-  return note;
+export async function addNote(id, text) {
+  await supabase.from("followups").insert({ org_id: _orgId, lead_id: id, body: text.trim() });
+  await refresh();
 }
 
-export function deleteNote(id, noteId) {
-  patch(id, (l) => ({ ...l, followups: (l.followups || []).filter((n) => n.id !== noteId) }));
+export async function deleteNote(id, noteId) {
+  await supabase.from("followups").delete().eq("id", noteId);
+  await refresh();
 }
 
-export function setTask(id, text, due) {
-  patch(id, (l) => logActivity({ ...l, task: { text: text.trim(), due } }, "task", { text: text.trim(), due }));
+export async function setTask(id, text, due) {
+  await supabase.from("tasks").insert({ org_id: _orgId, lead_id: id, title: text.trim(), due_date: due });
+  await supabase.from("lead_activity").insert({ org_id: _orgId, lead_id: id, type: "task", detail: text.trim() });
+  await refresh();
 }
 
-export function clearTask(id) {
-  patch(id, (l) => ({ ...l, task: null }));
+export async function clearTask(id) {
+  await supabase.from("tasks").update({ done: true, done_at: new Date().toISOString() }).eq("lead_id", id).eq("done", false);
+  await refresh();
 }
 
-export function addTag(id, tag) {
+export async function addTag(id, tag) {
   const t = tag.trim().toLowerCase();
   if (!t) return;
-  patch(id, (l) => (l.tags?.includes(t) ? l : { ...l, tags: [...(l.tags || []), t] }));
+  const tags = leadOf(id)?.tags || [];
+  if (tags.includes(t)) return;
+  await supabase.from("leads").update({ tags: [...tags, t] }).eq("id", id);
+  await refresh();
 }
 
-export function removeTag(id, tag) {
-  patch(id, (l) => ({ ...l, tags: (l.tags || []).filter((x) => x !== tag) }));
+export async function removeTag(id, tag) {
+  const tags = leadOf(id)?.tags || [];
+  await supabase.from("leads").update({ tags: tags.filter((x) => x !== tag) }).eq("id", id);
+  await refresh();
 }
 
-export function deleteLead(id) {
-  write(read().filter((l) => l.id !== id));
+export async function deleteLead(id) {
+  await supabase.from("leads").delete().eq("id", id); // children cascade
+  await refresh();
 }
 
-export function restoreLead(lead) {
-  if (read().some((l) => l.id === lead.id)) return;
-  write([lead, ...read()]);
+// Undo: re-insert the lead + its notes/open task/activity from a snapshot.
+export async function restoreLead(snap) {
+  await supabase.from("leads").insert({
+    id: snap.id,
+    org_id: _orgId,
+    name: snap.name,
+    email: snap.email || null,
+    phone: snap.phone || null,
+    instagram: snap.instagram || null,
+    tags: snap.tags || [],
+    source: snap.source || "manual",
+    stage: snap.stage || "new",
+    created_at: new Date(snap.createdAt || Date.now()).toISOString(),
+  });
+  if (snap.followups?.length)
+    await supabase.from("followups").insert(
+      snap.followups.map((f) => ({ org_id: _orgId, lead_id: snap.id, body: f.text, created_at: new Date(f.createdAt).toISOString() }))
+    );
+  if (snap.task) await supabase.from("tasks").insert({ org_id: _orgId, lead_id: snap.id, title: snap.task.text, due_date: snap.task.due });
+  await refresh();
 }
 
-export function importLeads(list) {
+export async function importLeads(list) {
   if (!Array.isArray(list)) throw new Error("invalid");
-  write(list.map(normalize));
+  const rows = list.map((l) => ({
+    org_id: _orgId,
+    name: l.name || "Lead",
+    email: l.email || null,
+    phone: l.phone || null,
+    instagram: l.instagram || null,
+    tags: l.tags || [],
+    source: l.source || "import",
+    stage: STAGES.includes(l.stage) ? l.stage : "new",
+  }));
+  if (rows.length) await supabase.from("leads").insert(rows);
+  await refresh();
 }
 
-export function resetLeads() {
-  cache = null;
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    /* ignore */
-  }
-  write(SEED.map(normalize));
-}
-
-export function subscribe(fn) {
-  listeners.add(fn);
-  const onStorage = (e) => {
-    if (e.key === KEY) {
-      cache = null;
-      fn();
-    }
-  };
-  window.addEventListener("storage", onStorage);
-  return () => {
-    listeners.delete(fn);
-    window.removeEventListener("storage", onStorage);
-  };
-}
-
-/* ---------- date helpers for tasks ---------- */
-export function isOverdue(due) {
-  return Boolean(due) && due < dstr(0);
-}
-export function isDueToday(due) {
-  return due === dstr(0);
+// "Reset demo data" → clears this academy's leads (children cascade).
+export async function resetLeads() {
+  await supabase.from("leads").delete().eq("org_id", _orgId);
+  await refresh();
 }

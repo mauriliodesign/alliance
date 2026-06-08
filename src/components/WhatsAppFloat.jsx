@@ -1,8 +1,8 @@
 import { FaWhatsapp } from "react-icons/fa";
-import { useSettings } from "../hooks/useSettings";
+import { usePublicBusiness } from "../hooks/usePublicBusiness";
 
 export default function WhatsAppFloat() {
-  const { business } = useSettings();
+  const business = usePublicBusiness();
   return (
     <a
       href={`https://wa.me/${business.whatsapp}`}

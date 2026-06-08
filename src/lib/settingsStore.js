@@ -1,97 +1,69 @@
-// Client-side settings store (localStorage). Single source of truth for
-// business info, pipeline presets and integrations used across the app.
-
-const KEY = "ajj-settings";
-const listeners = new Set();
+// Settings backed by the active organization's row (organizations table).
+import { supabase } from "./supabaseClient";
 
 export const DEFAULT_SETTINGS = {
-  business: {
-    name: "Alliance Jiu Jitsu Lisboa",
-    address: "Rua Almirante Gago Coutinho 19B, Moscavide",
-    phone: "+351 924 851 474",
-    whatsapp: "351924851474",
-    email: "geral@alliancejjlisboa.com",
-    instagram: "alliancejjpdn_lisboa",
-  },
-  pipeline: {
-    tags: ["adultos", "kids", "no-gi", "competidor", "reabertura"],
-    followupDays: 3,
-    stageLabels: {}, // optional overrides per stage id
-  },
-  integrations: {
-    gtmId: "GTM-NGFMBB8M",
-    googleCalendar: false,
-    aiEnabled: true,
-    geminiModel: "gemini-2.5-flash",
-  },
-  account: {
-    adminEmail: "",
-  },
+  business: { name: "", address: "", phone: "", whatsapp: "", email: "", instagram: "" },
+  pipeline: { tags: [], followupDays: 3, stageLabels: {} },
+  integrations: { gtmId: "", aiEnabled: true, geminiModel: "gemini-2.5-flash" },
+  account: { adminEmail: "" },
 };
 
-let cache = null;
-
-function deepMerge(base, extra) {
-  const out = Array.isArray(base) ? [...base] : { ...base };
-  for (const k in extra) {
-    if (extra[k] && typeof extra[k] === "object" && !Array.isArray(extra[k])) {
-      out[k] = deepMerge(base[k] || {}, extra[k]);
-    } else {
-      out[k] = extra[k];
-    }
-  }
-  return out;
+let _qc = null;
+let _orgId = null;
+let _cache = DEFAULT_SETTINGS;
+export function bindSettings(queryClient, orgId) {
+  _qc = queryClient;
+  _orgId = orgId;
 }
 
-function load() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) return deepMerge(DEFAULT_SETTINGS, JSON.parse(raw));
-  } catch {
-    /* ignore */
-  }
-  return DEFAULT_SETTINGS;
-}
-
-function read() {
-  if (!cache) cache = load();
-  return cache;
-}
-
-function write(next) {
-  cache = next;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {
-    /* ignore */
-  }
-  listeners.forEach((fn) => fn());
+export function orgToSettings(o) {
+  if (!o) return DEFAULT_SETTINGS;
+  const s = {
+    business: {
+      name: o.name || "",
+      address: o.address || "",
+      phone: o.phone || "",
+      whatsapp: o.whatsapp || "",
+      email: o.email || "",
+      instagram: o.instagram || "",
+    },
+    pipeline: { tags: o.tags || [], followupDays: o.followup_days ?? 3, stageLabels: o.stage_labels || {} },
+    integrations: { gtmId: o.gtm_id || "", aiEnabled: o.ai_enabled ?? true, geminiModel: o.gemini_model || "gemini-2.5-flash" },
+    account: { adminEmail: "" },
+  };
+  _cache = s;
+  return s;
 }
 
 export function getSettings() {
-  return read();
+  return _cache;
 }
 
-// patch is a partial settings object (deep-merged).
-export function updateSettings(patch) {
-  write(deepMerge(read(), patch));
+export async function fetchOrgSettings(orgId) {
+  if (!orgId) return DEFAULT_SETTINGS;
+  const { data, error } = await supabase.from("organizations").select("*").eq("id", orgId).single();
+  if (error) throw error;
+  return orgToSettings(data);
 }
 
-export function resetSettings() {
-  write(DEFAULT_SETTINGS);
-}
+const COL = {
+  business: { name: "name", address: "address", phone: "phone", whatsapp: "whatsapp", email: "email", instagram: "instagram" },
+  pipeline: { tags: "tags", followupDays: "followup_days", stageLabels: "stage_labels" },
+  integrations: { gtmId: "gtm_id", aiEnabled: "ai_enabled", geminiModel: "gemini_model" },
+};
 
-export function subscribeSettings(fn) {
-  listeners.add(fn);
-  const onStorage = (e) => {
-    if (e.key === KEY) {
-      cache = null;
-      fn();
+// Accepts the same partial nested shape the UI already uses.
+export async function updateSettings(patch) {
+  const cols = {};
+  for (const group of ["business", "pipeline", "integrations"]) {
+    if (patch[group]) {
+      for (const [k, v] of Object.entries(patch[group])) {
+        if (COL[group][k]) cols[COL[group][k]] = v;
+      }
     }
-  };
-  window.addEventListener("storage", onStorage);
-  return () => {
-    listeners.delete(fn);
-    window.removeEventListener("storage", onStorage);
-  };
+  }
+  if (Object.keys(cols).length && _orgId) {
+    await supabase.from("organizations").update(cols).eq("id", _orgId);
+    if (_qc) await _qc.invalidateQueries({ queryKey: ["org", _orgId] });
+  }
 }

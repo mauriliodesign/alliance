@@ -1,7 +1,14 @@
-import { useSyncExternalStore } from "react";
-import { getLeads, subscribe } from "../lib/leadsStore";
+import { useQuery } from "@tanstack/react-query";
+import { fetchLeads } from "../lib/leadsStore";
+import { useOrg } from "../org/OrgProvider";
 
-// Re-renders consumers whenever the leads store changes.
+// Returns the active org's leads (assembled shape). Empty array while loading.
 export function useLeads() {
-  return useSyncExternalStore(subscribe, getLeads, getLeads);
+  const { orgId } = useOrg();
+  const { data } = useQuery({
+    queryKey: ["leads", orgId],
+    queryFn: () => fetchLeads(orgId),
+    enabled: Boolean(orgId),
+  });
+  return data ?? [];
 }

@@ -2,7 +2,7 @@ import { HiArrowUp, HiPhone, HiLocationMarker, HiMail } from "react-icons/hi";
 import { FaWhatsapp, FaInstagram } from "react-icons/fa";
 import { useLang } from "../i18n/LanguageContext";
 import { useBooking } from "./BookingContext";
-import { useSettings } from "../hooks/useSettings";
+import { usePublicBusiness } from "../hooks/usePublicBusiness";
 
 const LINKS = [
   { key: "navbar.programs", href: "#programas" },
@@ -16,7 +16,7 @@ const LINKS = [
 export default function Footer() {
   const { t } = useLang();
   const { openBooking } = useBooking();
-  const { business } = useSettings();
+  const business = usePublicBusiness();
   const year = new Date().getFullYear();
 
   return (

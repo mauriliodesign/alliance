@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { HiX, HiCheckCircle } from "react-icons/hi";
 import { useLang } from "../i18n/LanguageContext";
 import { useBooking } from "./BookingContext";
-import { useSettings } from "../hooks/useSettings";
-import { addLead } from "../lib/leadsStore";
+import { usePublicBusiness } from "../hooks/usePublicBusiness";
+import { supabase, ORG_SLUG } from "../lib/supabaseClient";
 
 export default function BookingModal() {
   const { t } = useLang();
   const { open, closeBooking } = useBooking();
-  const { business } = useSettings();
+  const business = usePublicBusiness();
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [status, setStatus] = useState("idle"); // idle | loading | success
 
@@ -36,19 +36,27 @@ export default function BookingModal() {
 
   if (!open) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("loading");
-    // Persist the lead so it shows up in the /admin sales pipeline.
-    addLead({ name: form.name, email: form.email, phone: form.phone, source: "form" });
-    // No backend in this clone — forward the lead to WhatsApp and show success.
+    // Persist the lead in this academy's pipeline via the public RPC (anon).
+    try {
+      await supabase.rpc("submit_lead", {
+        p_slug: ORG_SLUG,
+        p_name: form.name,
+        p_email: form.email || null,
+        p_phone: form.phone || null,
+        p_instagram: null,
+        p_tags: [],
+      });
+    } catch {
+      /* still show success + WhatsApp handoff even if the insert fails */
+    }
     const msg = encodeURIComponent(
       `${t("modal.title")}\n${t("modal.nameLabel")}: ${form.name}\n${t("modal.emailLabel")}: ${form.email}\n${t("modal.phoneLabel")}: ${form.phone}`
     );
-    setTimeout(() => {
-      window.open(`https://wa.me/${business.whatsapp}?text=${msg}`, "_blank", "noopener");
-      setStatus("success");
-    }, 700);
+    window.open(`https://wa.me/${business.whatsapp}?text=${msg}`, "_blank", "noopener");
+    setStatus("success");
   };
 
   const change = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
