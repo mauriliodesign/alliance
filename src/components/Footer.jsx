@@ -24,9 +24,9 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <img
-              src="/brand/logo-alliance-sem-fundo.png"
+              src="/brand/logo-alliance-team.png"
               alt="Alliance Jiu Jitsu Lisboa"
-              className="h-12 w-auto"
+              className="h-14 w-auto"
             />
             <p className="mt-5 max-w-md text-sm leading-relaxed text-alliance-light/55">
               {t("footer.brand")}
@@ -42,7 +42,7 @@ export default function Footer() {
                 <FaWhatsapp />
               </a>
               <a
-                href="https://www.instagram.com/"
+                href="https://www.instagram.com/alliancejjpdn_lisboa/"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"

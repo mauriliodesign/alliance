@@ -20,9 +20,9 @@ export default function Coach() {
           <div className="reveal relative">
             <div className="relative overflow-hidden rounded-3xl border border-white/10">
               <img
-                src="/images/alliance-photo-7.webp"
+                src="/images/rafa.webp"
                 alt={t("coach.name")}
-                className="aspect-[4/5] w-full object-cover"
+                className="aspect-[4/5] w-full object-cover object-top"
                 loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-alliance-black/70 via-transparent to-transparent" />

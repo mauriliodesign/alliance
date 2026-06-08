@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { HiMenu, HiX } from "react-icons/hi";
 import { useLang } from "../i18n/LanguageContext";
 import { useBooking } from "./BookingContext";
@@ -44,9 +45,9 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 sm:px-8">
         <a href="#top" className="flex items-center gap-2" onClick={close}>
           <img
-            src="/brand/logo-alliance-sem-fundo.png"
+            src="/brand/logo-alliance-team.png"
             alt="Alliance Jiu Jitsu Lisboa"
-            className="h-9 w-auto sm:h-10"
+            className="h-11 w-auto sm:h-12"
           />
         </a>
 
@@ -65,6 +66,12 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-4 lg:flex">
           <LanguageSwitcher />
+          <Link
+            to="/login"
+            className="text-sm font-medium tracking-wide text-alliance-light/70 transition-colors hover:text-alliance-yellow"
+          >
+            {t("navbar.login")}
+          </Link>
           <button
             onClick={openBooking}
             className="rounded-full bg-alliance-yellow px-5 py-2.5 text-sm font-semibold text-alliance-black transition-transform hover:scale-105 hover:bg-alliance-yellow-light"
@@ -103,6 +110,15 @@ export default function Navbar() {
               </a>
             </li>
           ))}
+          <li>
+            <Link
+              to="/login"
+              onClick={close}
+              className="block border-b border-white/5 py-4 font-display text-2xl text-alliance-light transition-colors hover:text-alliance-yellow"
+            >
+              {t("navbar.login")}
+            </Link>
+          </li>
           <li className="pt-6">
             <button
               onClick={() => {
