@@ -1,13 +1,14 @@
 import { Link } from "react-router-dom";
-import { HiViewBoards, HiUsers, HiArrowLeft, HiLogout, HiX } from "react-icons/hi";
+import { HiViewBoards, HiUsers, HiArrowLeft, HiLogout, HiX, HiChartPie } from "react-icons/hi";
 import { useLang } from "../../i18n/LanguageContext";
 
 const NAV = [
+  { id: "overview", icon: HiChartPie, label: "admin.navOverview" },
   { id: "pipeline", icon: HiViewBoards, label: "admin.navPipeline" },
   { id: "contacts", icon: HiUsers, label: "admin.navContacts" },
 ];
 
-export default function Sidebar({ view, setView, open, onClose }) {
+export default function Sidebar({ view, setView, open, onClose, dueCount = 0 }) {
   const { t } = useLang();
 
   return (
@@ -66,7 +67,13 @@ export default function Sidebar({ view, setView, open, onClose }) {
               >
                 <Icon className="text-lg" />
                 {t(item.label)}
-                {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-alliance-yellow" />}
+                {item.id === "pipeline" && dueCount > 0 ? (
+                  <span className="ml-auto rounded-full bg-rose-500/90 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                    {dueCount}
+                  </span>
+                ) : (
+                  active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-alliance-yellow" />
+                )}
               </button>
             );
           })}
