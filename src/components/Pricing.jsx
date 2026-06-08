@@ -8,11 +8,15 @@ const PLANS = [
   {
     name: "pricing.kidsName",
     prefix: "pricing.kidsPrefix",
+    price: 59,
+    monthly: true,
     features: ["pricing.kidsF1", "pricing.kidsF2", "pricing.kidsF3", "pricing.kidsF4"],
   },
   {
     name: "pricing.adultsName",
     prefix: "pricing.adultsPrefix",
+    price: 79,
+    monthly: true,
     popular: true,
     features: [
       "pricing.adultsF1",
@@ -25,11 +29,15 @@ const PLANS = [
   {
     name: "pricing.dropinName",
     prefix: "pricing.dropinPrefix",
+    price: 20,
+    monthly: false,
     features: ["pricing.dropinF1", "pricing.dropinF2", "pricing.dropinF3"],
   },
   {
     name: "pricing.private1Name",
     prefix: "pricing.private1Prefix",
+    price: 165,
+    monthly: true,
     features: [
       "pricing.private1F1",
       "pricing.private1F2",
@@ -40,6 +48,8 @@ const PLANS = [
   {
     name: "pricing.private2Name",
     prefix: "pricing.private2Prefix",
+    price: 315,
+    monthly: true,
     features: [
       "pricing.private2F1",
       "pricing.private2F2",
@@ -88,9 +98,15 @@ export default function Pricing() {
               <h3 className="font-display text-2xl tracking-wide text-alliance-light">
                 {t(plan.name)}
               </h3>
-              <p className="mt-2 text-sm font-medium uppercase tracking-wide text-alliance-yellow/80">
+              <p className="mt-2 text-xs font-medium uppercase tracking-wide text-alliance-yellow/80">
                 {t(plan.prefix)}
               </p>
+              <div className="mt-1 flex items-end gap-1">
+                <span className="font-display text-5xl leading-none text-alliance-light">{plan.price}€</span>
+                {plan.monthly && (
+                  <span className="pb-1 text-sm text-alliance-light/50">{t("pricing.perMonth")}</span>
+                )}
+              </div>
 
               <ul className="mt-6 flex flex-1 flex-col gap-3">
                 {plan.features.map((f) => (
