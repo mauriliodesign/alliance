@@ -17,6 +17,18 @@ export function timeAgo(ts, lang = "pt") {
   return rtf.format(0, "minute"); // "agora mesmo"
 }
 
+// Program interest options for a lead.
+export const INTEREST_OPTS = [
+  { value: "adults", label: "admin.intAdults" },
+  { value: "kids", label: "admin.intKids" },
+  { value: "nogi", label: "admin.intNogi" },
+  { value: "private", label: "admin.intPrivate" },
+];
+
+export const interestKey = (value) => INTEREST_OPTS.find((o) => o.value === value)?.label || null;
+
+export const TAG_SUGGESTIONS = ["adultos", "kids", "no-gi", "competidor", "reabertura"];
+
 // One small colour cue per stage (used only as a dot, like the selected menu item).
 export const STAGE_DOT = {
   new: "bg-alliance-yellow",

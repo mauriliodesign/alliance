@@ -20,10 +20,11 @@ import { useToast } from "../components/ToastContext";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import Sidebar from "../components/admin/Sidebar";
 import LeadDrawer from "../components/admin/LeadDrawer";
+import Calendar from "../components/admin/Calendar";
 import Avatar from "../components/admin/Avatar";
 import { useLeads } from "../hooks/useLeads";
 import { STAGES, addLead, moveLead, deleteLead, restoreLead, isOverdue, isDueToday } from "../lib/leadsStore";
-import { timeAgo, exportLeadsCsv, STAGE_DOT } from "../lib/format";
+import { timeAgo, exportLeadsCsv, STAGE_DOT, INTEREST_OPTS, TAG_SUGGESTIONS } from "../lib/format";
 
 const DAY = 86400000;
 
@@ -158,104 +159,19 @@ export default function Admin() {
 
 /* ---------------- Overview ---------------- */
 
-function Overview({ leads, t, lang, stats, onOpen }) {
+function Overview({ leads, t, stats, onOpen }) {
   const thisWeek = leads.filter((l) => Date.now() - l.createdAt < 7 * DAY).length;
-  const maxStage = Math.max(1, ...STAGES.map((s) => leads.filter((l) => l.stage === s).length));
-  const formCount = leads.filter((l) => l.source !== "manual").length;
-  const manualCount = leads.length - formCount;
-  const due = leads.filter(taskPending).sort((a, b) => (a.task.due < b.task.due ? -1 : 1));
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat icon={HiUsers} label={t("admin.total")} value={stats.total} accent="text-alliance-yellow" />
-        <Stat icon={HiPlus} label={t("admin.leadsThisWeek")} value={thisWeek} accent="text-sky-300" />
-        <Stat icon={HiOutlineCalendar} label={t("admin.openTasks")} value={stats.dueCount} accent="text-rose-400" />
-        <Stat icon={HiTrendingUp} label={t("admin.conversion")} value={`${stats.conversion}%`} accent="text-emerald-300" />
+        <Stat icon={HiUsers} label={t("admin.total")} value={stats.total} />
+        <Stat icon={HiPlus} label={t("admin.leadsThisWeek")} value={thisWeek} />
+        <Stat icon={HiOutlineCalendar} label={t("admin.openTasks")} value={stats.dueCount} />
+        <Stat icon={HiTrendingUp} label={t("admin.conversion")} value={`${stats.conversion}%`} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Leads by stage */}
-        <section className="rounded-2xl border border-white/8 bg-alliance-gray/40 p-6">
-          <h3 className="font-display text-xl tracking-wide text-alliance-light">{t("admin.funnel")}</h3>
-          <p className="mt-1 text-xs text-alliance-light/45">{t("admin.funnelSub")}</p>
-          <div className="mt-5 flex flex-col gap-3">
-            {STAGES.map((s) => {
-              const count = leads.filter((l) => l.stage === s).length;
-              const pct = leads.length ? Math.round((count / leads.length) * 100) : 0;
-              return (
-                <div key={s} className="flex items-center gap-3">
-                  <span className="flex w-32 shrink-0 items-center gap-2 text-xs text-alliance-light/60">
-                    <span className={`h-2 w-2 shrink-0 rounded-full ${STAGE_DOT[s]}`} />
-                    {t(`admin.stage.${s}`)}
-                  </span>
-                  <div className="h-6 flex-1 overflow-hidden rounded-md bg-white/5">
-                    <div className="h-full rounded-md bg-alliance-light/20 transition-all" style={{ width: `${(count / maxStage) * 100}%`, minWidth: count ? "0.5rem" : 0 }} />
-                  </div>
-                  <span className="w-16 shrink-0 text-right">
-                    <span className="text-sm font-semibold text-alliance-light">{count}</span>
-                    <span className="ml-1 text-xs text-alliance-light/45">{pct}%</span>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Sources + due tasks */}
-        <div className="flex flex-col gap-6">
-          <section className="rounded-2xl border border-white/8 bg-alliance-gray/40 p-6">
-            <h3 className="font-display text-xl tracking-wide text-alliance-light">{t("admin.sourcesTitle")}</h3>
-            <p className="mt-1 text-xs text-alliance-light/45">{t("admin.sourcesSub")}</p>
-            <div className="mt-5 flex flex-col gap-3">
-              <SourceBar label={t("admin.sourceFormLong")} count={formCount} total={leads.length} />
-              <SourceBar label={t("admin.sourceManualLong")} count={manualCount} total={leads.length} />
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/8 bg-alliance-gray/40 p-6">
-            <h3 className="flex items-center gap-2 font-display text-xl tracking-wide text-alliance-light">
-              <HiOutlineCalendar className="text-lg text-alliance-light/40" /> {t("admin.openTasks")}
-            </h3>
-            <ul className="mt-4 flex flex-col gap-2">
-              {due.length === 0 ? (
-                <li className="py-4 text-center text-xs text-alliance-light/30">{t("admin.empty")}</li>
-              ) : (
-                due.slice(0, 5).map((l) => (
-                  <li key={l.id}>
-                    <button onClick={() => onOpen(l.id)} className="flex w-full items-center gap-3 rounded-xl border border-white/8 bg-alliance-black/40 p-3 text-left transition-colors hover:border-alliance-yellow/40">
-                      <Avatar name={l.name} size="sm" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-alliance-light">{l.name}</p>
-                        <p className="truncate text-xs text-alliance-light/50">{l.task.text}</p>
-                      </div>
-                      <span className={`shrink-0 text-xs font-semibold ${isOverdue(l.task.due) ? "text-rose-400" : "text-alliance-light/50"}`}>
-                        {isOverdue(l.task.due) ? t("admin.overdue") : t("admin.dueToday")}
-                      </span>
-                    </button>
-                  </li>
-                ))
-              )}
-            </ul>
-          </section>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SourceBar({ label, count, total }) {
-  const pct = total ? Math.round((count / total) * 100) : 0;
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-36 shrink-0 text-xs text-alliance-light/60">{label}</span>
-      <div className="h-6 flex-1 overflow-hidden rounded-md bg-white/5">
-        <div className="h-full rounded-md bg-alliance-light/25" style={{ width: `${pct}%` }} />
-      </div>
-      <span className="w-16 shrink-0 text-right">
-        <span className="text-sm font-semibold text-alliance-light">{count}</span>
-        <span className="ml-1 text-xs text-alliance-light/45">{pct}%</span>
-      </span>
+      <Calendar leads={leads} onOpen={onOpen} />
     </div>
   );
 }
@@ -473,8 +389,10 @@ function Stat({ icon: Icon, label, value }) {
 }
 
 function AddLeadModal({ t, onClose }) {
-  const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", interest: "", instagram: "", tags: [] });
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const toggleTag = (tag) =>
+    setForm((f) => ({ ...f, tags: f.tags.includes(tag) ? f.tags.filter((x) => x !== tag) : [...f.tags, tag] }));
 
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -485,7 +403,7 @@ function AddLeadModal({ t, onClose }) {
   const submit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    addLead({ ...form, source: "manual" });
+    addLead({ ...form, instagram: form.instagram.trim().replace(/^@/, ""), source: "manual" });
     onClose();
   };
 
@@ -511,6 +429,40 @@ function AddLeadModal({ t, onClose }) {
             <Field label={t("modal.nameLabel")} value={form.name} onChange={change("name")} placeholder={t("modal.namePlaceholder")} required autoFocus />
             <Field label={t("modal.emailLabel")} type="email" value={form.email} onChange={change("email")} placeholder={t("modal.emailPlaceholder")} />
             <Field label={t("modal.phoneLabel")} type="tel" value={form.phone} onChange={change("phone")} placeholder={t("modal.phonePlaceholder")} />
+            <Field label={t("admin.instagram")} value={form.instagram} onChange={change("instagram")} placeholder="@instagram" />
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-alliance-light/60">{t("admin.interest")}</span>
+              <select
+                value={form.interest}
+                onChange={change("interest")}
+                className="rounded-xl border border-white/10 bg-alliance-black px-4 py-3 text-sm text-alliance-light outline-none transition-colors focus:border-alliance-yellow"
+              >
+                <option value="">{t("admin.interestSelect")}</option>
+                {INTEREST_OPTS.map((o) => (
+                  <option key={o.value} value={o.value}>{t(o.label)}</option>
+                ))}
+              </select>
+            </label>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-alliance-light/60">{t("admin.tags")}</span>
+              <div className="flex flex-wrap gap-2">
+                {TAG_SUGGESTIONS.map((tg) => {
+                  const on = form.tags.includes(tg);
+                  return (
+                    <button
+                      key={tg}
+                      type="button"
+                      onClick={() => toggleTag(tg)}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                        on ? "border-alliance-yellow bg-alliance-yellow/15 text-alliance-yellow" : "border-white/15 text-alliance-light/55 hover:border-white/30"
+                      }`}
+                    >
+                      {tg}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
           <div className="mt-auto flex gap-3 pt-8">
             <button type="button" onClick={onClose} className="flex-1 rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-alliance-light transition-colors hover:border-white/40">

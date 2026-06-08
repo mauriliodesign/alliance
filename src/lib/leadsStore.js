@@ -16,10 +16,10 @@ const day = 86400000;
 const dstr = (offsetDays) => new Date(Date.now() + offsetDays * day).toISOString().slice(0, 10);
 
 const SEED = [
-  { id: uid(), name: "João Pereira", email: "joao.pereira@email.com", phone: "+351 912 345 678", source: "form", stage: "new", createdAt: Date.now() - day * 0.2, tags: ["adultos"], task: { text: "Ligar a confirmar interesse", due: dstr(1) } },
+  { id: uid(), name: "João Pereira", email: "joao.pereira@email.com", phone: "+351 912 345 678", source: "form", stage: "new", createdAt: Date.now() - day * 0.2, tags: ["adultos"], interest: "adults", instagram: "joao.bjj", task: { text: "Ligar a confirmar interesse", due: dstr(1) } },
   { id: uid(), name: "Marta Silva", email: "marta.silva@email.com", phone: "+351 933 221 100", source: "form", stage: "new", createdAt: Date.now() - day * 4.1 },
   { id: uid(), name: "Ricardo Gomes", email: "r.gomes@email.com", phone: "+351 961 010 202", source: "form", stage: "contacted", createdAt: Date.now() - day * 2.4, tags: ["no-gi"], task: { text: "Enviar horários por WhatsApp", due: dstr(-1) }, followups: [{ id: uid(), text: "Primeiro contacto feito, vai pensar.", createdAt: Date.now() - day * 2 }] },
-  { id: uid(), name: "Ana Costa", email: "ana.costa@email.com", phone: "+351 915 998 877", source: "form", stage: "scheduled", createdAt: Date.now() - day * 3.2, tags: ["kids"], task: { text: "Aula experimental marcada", due: dstr(0) } },
+  { id: uid(), name: "Ana Costa", email: "ana.costa@email.com", phone: "+351 915 998 877", source: "form", stage: "scheduled", createdAt: Date.now() - day * 3.2, tags: ["kids"], interest: "kids", instagram: "ana.costa", task: { text: "Aula experimental marcada", due: dstr(0) } },
   { id: uid(), name: "Pedro Martins", email: "pedro.m@email.com", phone: "+351 962 334 556", source: "manual", stage: "attended", createdAt: Date.now() - day * 5, followups: [{ id: uid(), text: "Gostou da aula, decide até sexta.", createdAt: Date.now() - day * 1 }] },
   { id: uid(), name: "Sofia Almeida", email: "sofia.a@email.com", phone: "+351 934 778 990", source: "form", stage: "won", createdAt: Date.now() - day * 7, tags: ["adultos", "competidor"] },
   { id: uid(), name: "Bruno Dias", email: "bruno.dias@email.com", phone: "+351 911 223 344", source: "form", stage: "lost", createdAt: Date.now() - day * 9 },
