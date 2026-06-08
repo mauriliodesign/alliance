@@ -138,6 +138,31 @@ function PipelineTab({ t, s }) {
 function IntegrationsTab({ t, s }) {
   return (
     <div className="flex flex-col gap-6">
+      <Card title={t("settings.aiTitle")} hint={t("settings.aiKeyHint")}>
+        <div className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold uppercase tracking-wide text-alliance-light/60">{t("settings.aiModel")}</span>
+            <select
+              value={s.integrations.geminiModel}
+              onChange={(e) => updateSettings({ integrations: { geminiModel: e.target.value } })}
+              className="w-full max-w-xs rounded-lg border border-white/10 bg-alliance-black px-3 py-2 text-sm text-alliance-light outline-none focus:border-alliance-yellow"
+            >
+              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+              <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+            </select>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2.5 text-sm text-alliance-light/80">
+            <input
+              type="checkbox"
+              checked={s.integrations.aiEnabled}
+              onChange={(e) => updateSettings({ integrations: { aiEnabled: e.target.checked } })}
+              className="h-4 w-4 cursor-pointer accent-alliance-yellow"
+            />
+            {t("settings.aiEnabled")}
+          </label>
+        </div>
+      </Card>
+
       <Card title={t("settings.gtmId")} hint={t("settings.gtmHint")}>
         <input
           value={s.integrations.gtmId}

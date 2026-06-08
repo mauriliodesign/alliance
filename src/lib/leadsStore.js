@@ -26,7 +26,7 @@ const SEED = [
 ];
 
 function normalize(l) {
-  return { followups: [], tags: [], activity: [], task: null, ...l };
+  return { followups: [], tags: [], activity: [], task: null, insight: null, ...l };
 }
 
 let cache = null;

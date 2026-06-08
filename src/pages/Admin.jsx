@@ -24,6 +24,7 @@ import Calendar from "../components/admin/Calendar";
 import DayDrawer from "../components/admin/DayDrawer";
 import Avatar from "../components/admin/Avatar";
 import Settings from "../components/admin/Settings";
+import Insights from "../components/admin/Insights";
 import { useLeads } from "../hooks/useLeads";
 import { useSettings } from "../hooks/useSettings";
 import { STAGES, addLead, moveLead, deleteLead, restoreLead, isOverdue, isDueToday } from "../lib/leadsStore";
@@ -78,7 +79,7 @@ export default function Admin() {
     showToast({ message: t("admin.leadRemoved"), actionLabel: t("admin.undo"), onAction: () => restoreLead(lead) });
   };
 
-  const titles = { overview: t("admin.navOverview"), pipeline: t("admin.navPipeline"), contacts: t("admin.navContacts"), settings: t("settings.title") };
+  const titles = { overview: t("admin.navOverview"), pipeline: t("admin.navPipeline"), contacts: t("admin.navContacts"), insights: t("admin.navInsights"), settings: t("settings.title") };
 
   return (
     <div className="min-h-screen bg-alliance-black">
@@ -100,7 +101,7 @@ export default function Admin() {
 
             <div className="flex items-center gap-3">
               <LanguageSwitcher />
-              {view !== "settings" && (
+              {view !== "settings" && view !== "insights" && (
                 <button
                   onClick={() => setAdding(true)}
                   className="inline-flex items-center gap-2 rounded-full bg-alliance-yellow px-4 py-2.5 text-sm font-semibold text-alliance-black transition-colors hover:bg-alliance-yellow-light"
@@ -116,6 +117,8 @@ export default function Admin() {
         <main className="px-5 py-6 sm:px-8">
           {view === "settings" ? (
             <Settings />
+          ) : view === "insights" ? (
+            <Insights leads={leads} onOpen={setSelectedId} />
           ) : view === "overview" ? (
             <Overview leads={leads} t={t} stats={{ total, won, conversion, dueCount }} onOpen={setSelectedId} onDayClick={setSelectedDay} />
           ) : (

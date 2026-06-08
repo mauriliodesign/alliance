@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
-import { HiViewBoards, HiUsers, HiArrowLeft, HiLogout, HiX, HiChartPie, HiCog } from "react-icons/hi";
+import { HiViewBoards, HiUsers, HiArrowLeft, HiLogout, HiX, HiChartPie, HiCog, HiSparkles } from "react-icons/hi";
 import { useLang } from "../../i18n/LanguageContext";
 
 const NAV = [
   { id: "overview", icon: HiChartPie, label: "admin.navOverview" },
   { id: "pipeline", icon: HiViewBoards, label: "admin.navPipeline" },
   { id: "contacts", icon: HiUsers, label: "admin.navContacts" },
+  { id: "insights", icon: HiSparkles, label: "admin.navInsights" },
   { id: "settings", icon: HiCog, label: "settings.title" },
 ];
 

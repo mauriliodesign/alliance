@@ -21,6 +21,8 @@ export const DEFAULT_SETTINGS = {
   integrations: {
     gtmId: "GTM-NGFMBB8M",
     googleCalendar: false,
+    aiEnabled: true,
+    geminiModel: "gemini-2.5-flash",
   },
   account: {
     adminEmail: "",

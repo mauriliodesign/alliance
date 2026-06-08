@@ -19,6 +19,7 @@ import { useLang } from "../../i18n/LanguageContext";
 import { useToast } from "../ToastContext";
 import { useSettings } from "../../hooks/useSettings";
 import Avatar from "./Avatar";
+import InsightPanel from "./InsightPanel";
 import { timeAgo, STAGE_DOT, stageLabel } from "../../lib/format";
 import {
   STAGES,
@@ -336,6 +337,9 @@ export default function LeadDrawer({ lead, onClose }) {
               </form>
             )}
           </div>
+
+          {/* AI Insights */}
+          <InsightPanel lead={lead} />
 
           {/* Activity timeline */}
           <div className="mt-6">
